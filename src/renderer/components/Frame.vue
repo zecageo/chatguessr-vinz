@@ -15,7 +15,7 @@
     <div id="debugElement" style="background: hotpink; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 1.5rem; display:none;">
       <b>Debug stuff!</b>
       <div id="map" style="height: 400px; width: 100%;"></div>
-    <div id="pano" style="height: 400px; width: 100%;"></div>
+    <div id="pano" style="height: 1080px; width: 1920px;"></div>
 
 
     </div>
@@ -257,6 +257,8 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
   return closestLink.panoId
 }
 
+
+
 onBeforeUnmount(
   chatguessrApi.onStartRound(() => {
     gameState.value = 'in-round'
@@ -290,8 +292,6 @@ onBeforeUnmount(
     console.log("closest heading", pano)
     MWStreetViewInstance.setPano(pano)
     console.log(MWStreetViewInstance, "MWStreetViewInstance")
-
-return 0
 
 
 
@@ -537,6 +537,15 @@ onBeforeUnmount(
 onBeforeUnmount(
   chatguessrApi.onGuessesOpenChanged((open) => {
     scoreboard.value!.setSwitchState(open)
+    console.log("about to save ")
+    let canvas = document.querySelector(".widget-scene-canvas") as HTMLCanvasElement
+    if (!canvas) return
+    let url = canvas?.toDataURL()
+    chatguessrApi.sendCanvas(url);
+    // remove data from drawing Buffer
+    let ctx = canvas.getContext("webgl2") as WebGL2RenderingContext
+    ctx.clear(ctx.COLOR_BUFFER_BIT)
+
   })
 )
 
@@ -656,6 +665,7 @@ function injecterCallback(overrider)
       constructor(...args: any[]) {
           super(...args as [any, ...any[]]);
 					MWStreetViewInstance = this;
+          console.log("thiiiis", this)
 			}
 		}
 	});

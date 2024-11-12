@@ -1,10 +1,11 @@
-import { ipcMain } from 'electron'
+import { ipcMain, app } from 'electron'
 import { once } from 'events'
 import { io } from 'socket.io-client'
 import Game from './Game'
 import TwitchBackend from './utils/useTwitchJS'
 import { settings, saveSettings } from './utils/useSettings'
 import countryIso from 'coordinate_to_country'
+import fs from 'fs'
 
 import {
   isGameURL,
@@ -71,7 +72,7 @@ export default class GameHandler {
     this.#disappointedUsers = []
     this.#pay2WinUsers = []
     this.#russianHitmans = []
-    this.TMPZ = false
+    this.TMPZ = true
     this.init()
   }
 
@@ -96,6 +97,22 @@ export default class GameHandler {
     this.#backend?.sendMessage(settings.messageGuessesAreClosed, { system: true })
   }
 
+  async saveCanvas(url: string) {
+    if (url === '') return
+    const appDataPath = app.getPath('userData')
+    let roundId = this.#game.getRoundId()
+    const path = `${appDataPath}/canvasImages/${roundId}.png`
+
+    const base64Data = url.replace(/^data:image\/png;base64,/, '')
+    await fs
+      .writeFile(path, base64Data, 'base64', (err) => {
+        if (err) {
+          console.error(err)
+        }
+      })
+
+
+  }
   async nextRound(isRestartClick: boolean = false) {
     this.#battleRoyaleCounter = {}
 
@@ -615,6 +632,10 @@ export default class GameHandler {
 
     ipcMain.on('open-guesses', () => {
       this.openGuesses()
+    })
+    
+    ipcMain.on('send-canvas', (_event, url: string) => {
+      this.saveCanvas(url)
     })
 
     ipcMain.on('close-guesses', () => {

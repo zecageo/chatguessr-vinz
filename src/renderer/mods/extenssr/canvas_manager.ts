@@ -18,6 +18,12 @@ export default class CanvasManager {
     createNewCanvas(): HTMLCanvasElement {
         const canvas = this.factory('canvas') as HTMLCanvasElement
         const thees: CanvasManager = this
+
+       const context = canvas.getContext('webgl', { preserveDrawingBuffer: true }) 
+            if (!context) {
+                return canvas
+            }
+        
         aliasConfig(canvas, {
             getContext: (oldGetContext: { apply: (arg0: HTMLCanvasElement, arg1: any[]) => RenderingContext }) => (function(...args: any[]) {
                 if (canvas.getAttribute('data-engine') !== null) {
@@ -29,6 +35,7 @@ export default class CanvasManager {
                 return thees.onContextRequested(canvas, creator, args)
             })
         })
+
         return canvas
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,8 +46,7 @@ export default class CanvasManager {
             // Create a backing offscreen canvas.
             const backingCanvas = this.factory('canvas') as HTMLCanvasElement
             const options = args[1] || {}
-            const backingContext = backingCanvas.getContext(contextType, options) as WebGLRenderingContext
-
+            const backingContext = backingCanvas.getContext(contextType, options) as WebGLRenderingContext            
             // Wrap up the context and 
             this.wrapContext(canvas, contextCreator, backingCanvas, backingContext)
             return backingContext

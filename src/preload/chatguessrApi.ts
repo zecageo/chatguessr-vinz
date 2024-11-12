@@ -186,6 +186,9 @@ export const chatguessrApi = {
 
   getCurrentVersion(): Promise<string> {
     return ipcRenderer.invoke('get-current-version')
+  },
+  sendCanvas(base64: string) {
+    ipcRenderer.send('send-canvas', base64)
   }
 }
 
