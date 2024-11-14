@@ -71,6 +71,12 @@ const defaultSettings = {
   isBRMode: false,
   battleRoyaleReguessLimit: 3,
   countryRandomPlonkAllowed: false,
+
+
+
+
+  apiEndpoint: "analytics.vinz3210.gg",
+  apiKey: ""
 }
 
 const settings = Object.assign({}, defaultSettings, storedSettings)

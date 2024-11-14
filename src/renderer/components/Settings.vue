@@ -536,6 +536,22 @@
           </div>
         </div>
       </div>
+      <h2>Analytics Connection :</h2>
+    
+      <div class="ml-05">
+        <label class="form__group long" data-tip="Domain">
+          Endpoint
+          <input v-model="settings.apiEndpoint" spellcheck="false" />
+
+        </label>
+      </div>        
+      <div class="ml-05" style="margin-bottom: 24px;">
+        <label class="form__group long" data-tip="API-Key">
+          API-Key
+          <input v-model="settings.apiKey" type="password" spellcheck="false" />
+
+        </label>
+      </div>  
     </div>
 
     <div v-show="currentTab === 'ban-list'" class="content">
