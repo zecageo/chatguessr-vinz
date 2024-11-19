@@ -67,15 +67,17 @@ const defaultSettings = {
   includeBroadcasterDataInBest: true,
   isStartOfRoundCommandActive: false,
   startOfRoundCommand: "!botrandomplonk",
+  isABCModeActive: false,
   ABCModeLetters: "ABCDE",
   isBRMode: false,
+  brRoundLifes: '3',
   battleRoyaleReguessLimit: 3,
   countryRandomPlonkAllowed: false,
 
 
 
 
-  apiEndpoint: "analytics.vinz3210.gg",
+  apiEndpoint: "api.vinz3210.gg",
   apiKey: ""
 }
 
