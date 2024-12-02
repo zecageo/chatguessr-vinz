@@ -49,16 +49,20 @@
           >Close guesses when time's up :
           <input v-model="settings.autoCloseGuesses" type="checkbox" />
         </label>
+        <label class="form__group"
+          >Streamer Random Plonk automation:
+          <input v-model="settings.isAutomated" type="checkbox" />
+        </label>
         <hr />
 
         <label class="form__group"
           >Time ({{ settings.timeLimit }} sec) :
           <input
             v-model.number="settings.timeLimit"
-            type="range"
+            type="number"
             min="5"
             max="600"
-            step="5"
+            step="1"
             @input="reset()"
           />
         </label>
@@ -70,7 +74,7 @@
           >Time to plonk ({{ settings.timeToPlonk }} sec) :
           <input
             v-model.number="settings.timeToPlonk"
-            type="range"
+            type="number"
             min="5"
             :max="settings.timeLimit"
             step="5"
@@ -80,6 +84,17 @@
         <label class="form__group"
           >Time to plonk message :
           <input v-model="settings.timeToPlonkMsg" type="text" spellcheck="false" />
+        </label>
+        <label class="form__group"
+          >Time to show round & game results ({{ settings.timeToShowRoundAndGameResults }} sec) :
+          <input
+            v-model.number="settings.timeToShowRoundAndGameResults"
+            type="number"
+            min="3"
+            :max="settings.timeLimit"
+            step="1"
+            @input="reset()"
+          />
         </label>
         <hr />
 
@@ -165,6 +180,7 @@ import IconStop from '@/assets/icons/stop.svg'
 import IconGearStroke from '@/assets/icons/gear_stroke.svg'
 import IconAudio from '@/assets/icons/audio.svg'
 
+
 const { chatguessrApi } = window
 const props = defineProps<{
   gameState: GameState
@@ -200,7 +216,9 @@ const settings = reactive(
     shadowOffsetX: '4',
     shadowOffsetY: '4',
     shadowBlur: '0',
-    shadowColor: '#a159ff'
+    shadowColor: '#a159ff',
+    isAutomated: false,
+    timeToShowRoundAndGameResults: 5
   })
 )
 watch(settings, () => {
@@ -383,6 +401,7 @@ const start = () => {
       reset()
       if (settings.timesUpMsg) display.value = settings.timesUpMsg
       if (settings.autoCloseGuesses) chatguessrApi.setGuessesOpen(false)
+      autoRandomPlonkAtEndOfRound()
     } else updateDisplay()
 
     requestAnimationFrame(frameInterval)
@@ -396,6 +415,39 @@ const pause = () => {
   const nowTimestamp = Date.now()
   pausedDifference = Math.abs(targetTimestamp - nowTimestamp)
   frameInterval = () => {}
+}
+
+const autoRandomPlonkAtEndOfRound = () => {
+  if (settings.isAutomated) {
+    document.getElementById("streamerRandomplonkButton")?.click()
+  }
+    setTimeout(() => {
+        
+      clickNextRoundButtonIfExists()
+    }, settings.timeToShowRoundAndGameResults * 1000)
+}
+const clickNextRoundButtonIfExists = () => {
+  let nextRoundButtonButton = document.querySelector("[data-qa^='close-round-result']") as HTMLButtonElement;
+  let isLastRound = false;
+  if (nextRoundButtonButton) {
+    isLastRound = nextRoundButtonButton?.innerText === "VIEW RESULTS";
+    nextRoundButtonButton?.click()
+  }
+  if (isLastRound) {
+    autoStartNextGameFunction()
+  }
+}
+const autoStartNextGameFunction = ()=>{
+  // click on play-again-button after timeToShowRoundAndGameResults time
+  setLocalStorage('cg_autostartNextGame', true)
+  setTimeout(() => {
+    let playAgainButton = document.querySelector("[data-qa^='play-again-button']") as HTMLButtonElement;
+    if (playAgainButton) {
+      playAgainButton.click()
+
+    }
+
+  }, settings.timeToShowRoundAndGameResults * 1000)
 }
 
 const reset = () => {

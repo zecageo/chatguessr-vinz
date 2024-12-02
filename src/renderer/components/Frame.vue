@@ -61,6 +61,7 @@
     <button
       class="cg-button"
       title="Randomplonk for Streamer"
+      id="streamerRandomplonkButton"
       :hidden="gameState === 'none'"
       @click="onStreamerRandomplonk"
     >
@@ -132,6 +133,8 @@ const modeHelp = shallowRef<string[]>([])
 const guessMarkersLimit = shallowRef<number | null>(null)
 const currentLocation = shallowRef<LatLng | null>(null)
 const gameResultLocations = shallowRef<Location_[] | null>(null)
+
+
 var MWStreetViewInstance
 
 
@@ -219,6 +222,32 @@ watch(
   },
   { immediate: true }
 )
+// Create an observer to watch for:
+// - URL starting with https://www.geoguessr.com/maps
+// - Button existing with className starting with button_button
+const newGameObserver = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if(getLocalStorage('autoStartNextGame', false)) {
+      return
+    }
+    if (mutation.type === 'childList') {
+      const buttons = document.querySelectorAll("[class^='button_button']");
+      buttons.forEach((button) => {
+        if (button instanceof HTMLElement && button.innerText === "PLAY") {
+          console.log("Clicking on play button");
+          button.click();
+          setLocalStorage('autoStartNextGame', false);
+          newGameObserver.disconnect(); // Stop observing once the button is clicked
+        }
+      });
+    }
+  });
+});
+
+// Start observing the document for changes
+newGameObserver.observe(document.body, { childList: true, subtree: true });
+
+
 
 onBeforeUnmount(
   chatguessrApi.onGameStarted((_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
