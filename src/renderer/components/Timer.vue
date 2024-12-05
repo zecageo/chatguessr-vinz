@@ -439,6 +439,10 @@ const clickNextRoundButtonIfExists = () => {
 }
 const autoStartNextGameFunction = ()=>{
   // click on play-again-button after timeToShowRoundAndGameResults time
+  let timer = settings.timeToShowRoundAndGameResults * 1000;
+  if (timer < 3000) {
+    timer = 3000;
+  }
   setLocalStorage('cg_autostartNextGame', true)
   setTimeout(() => {
     let playAgainButton = document.querySelector("[data-qa^='play-again-button']") as HTMLButtonElement;
