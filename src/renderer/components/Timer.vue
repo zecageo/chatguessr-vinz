@@ -396,12 +396,17 @@ const start = () => {
       isTimeToPlonk.value = true
       if (settings.playAudio) playAudio()
     }
+    //if (targetTimestamp - Date.now() < 1) {
 
+    
     if (targetTimestamp - Date.now() < 1) {
-      reset()
       if (settings.timesUpMsg) display.value = settings.timesUpMsg
       if (settings.autoCloseGuesses) chatguessrApi.setGuessesOpen(false)
-      autoRandomPlonkAtEndOfRound()
+      if (targetTimestamp - Date.now() < -3000){
+        autoRandomPlonkAtEndOfRound()
+        reset()
+
+      }
     } else updateDisplay()
 
     requestAnimationFrame(frameInterval)
@@ -441,7 +446,7 @@ const autoStartNextGameFunction = ()=>{
   // click on play-again-button after timeToShowRoundAndGameResults time
   let timer = settings.timeToShowRoundAndGameResults * 1000;
   if (timer < 3000) {
-    timer = 3000;
+    timer = 4000;
   }
   setLocalStorage('cg_autostartNextGame', true)
   setTimeout(() => {
