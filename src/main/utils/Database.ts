@@ -866,7 +866,7 @@ ORDER BY
   getUser(id: string) {
     const user = this.#db
       .prepare(
-        'SELECT id, username, avatar, color, flag, previous_guess, reset_at FROM users WHERE id = ?'
+        'SELECT id, username, avatar, color, flag, reset_at FROM users WHERE id = ?'
       )
       .get(id)
 
@@ -875,7 +875,7 @@ ORDER BY
 
   getUserByUsername(username: string) {
     // case-insensitive search
-    const user = this.#db.prepare('SELECT id, username, avatar, color, flag, previous_guess, reset_at FROM users WHERE username = ? COLLATE NOCASE').get(username)
+    const user = this.#db.prepare('SELECT id, username, avatar, color, flag, reset_at FROM users WHERE username = ? COLLATE NOCASE').get(username)
 
     return user ? this.#parseUser(user) : undefined
   }
