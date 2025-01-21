@@ -656,6 +656,11 @@ export default class GameHandler {
     ipcMain.on('add-banned-user', (_event, username: string) => {
       this.#db.addBannedUser(username)
     })
+    ipcMain.on('send-pano', (_event, pano: string) => {
+      // get id of ongoing round
+      let roundId = this.#game.getRoundId()
+      this.#db.updatePano(pano, roundId)
+    })
 
     ipcMain.on('delete-banned-user', (_event, username: string) => {
       this.#db.deleteBannedUser(username)
