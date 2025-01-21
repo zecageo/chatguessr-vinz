@@ -187,7 +187,10 @@ const migrations: ((db: SQLite.Database) => void)[] = [
     db.prepare(`ALTER TABLE guesses ADD COLUMN is_random_plonk INTEGER DEFAULT NULL`).run()
   },
   function createRoundMode(db) {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()
+    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()  
+  },
+    function removeUsersPreviousGuessField(db) {
+      db.prepare(`ALTER TABLE users DROP COLUMN previous_guess`).run()
   }
 ]
 
@@ -848,7 +851,6 @@ ORDER BY
     avatar: string | null
     color: string
     flag: string | null
-    previousGuess: LatLng
     resetAt: number
   } {
     return {
@@ -857,7 +859,6 @@ ORDER BY
       avatar: record.avatar,
       color: record.color,
       flag: record.flag,
-      previousGuess: record.previous_guess ? JSON.parse(record.previous_guess) : null,
       resetAt: record.reset_at * 1000
     }
   }
@@ -903,11 +904,12 @@ ORDER BY
     })
   }
 
-  setUserPreviousGuess(userId: string, previousGuess: LatLng) {
-    this.#db.prepare(`UPDATE users SET previous_guess = :previousGuess WHERE id = :id`).run({
-      id: userId,
-      previousGuess: JSON.stringify(previousGuess)
-    })
+  getUserPreviousGuess(userId: string): LatLng | undefined {
+    const stmt = this.#db.prepare(
+      `SELECT location FROM guesses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+    )
+    const record = stmt.get(userId) as { location: string } | undefined
+    return record ? JSON.parse(record.location) : undefined
   }
 
   getNumberOfGamesInRoundFromRoundId(roundId: string): number {
