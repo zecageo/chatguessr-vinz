@@ -373,6 +373,26 @@ class db {
     })
   }
 
+  updatePano(panoId: string, roundId: string| undefined) {
+    // get location from roundId
+    if(!roundId) {
+      return
+    }
+    const stmt = this.#db.prepare(`SELECT location from rounds WHERE id = ?`)
+    let location = stmt.get(roundId)
+    if (!location) {
+      return
+    }
+    let loc = JSON.parse(location["location"])
+    // update location with panoId
+    loc.panoId = panoId
+    console.log("location", location)
+    const updateRound = this.#db.prepare(`UPDATE rounds SET location = :location WHERE id = :id`)
+    updateRound.run({
+      id: roundId,
+      location: JSON.stringify(loc)
+    })
+  }
   getLastRoundLocation() {
     const stmt = this.#db
       .prepare(`SELECT location from rounds ORDER BY created_at DESC LIMIT 1`)

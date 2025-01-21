@@ -1,7 +1,7 @@
 import pMap from 'p-map'
 
 import {
-  latLngEqual,
+  compareLatLng,
   calculateScale,
   fetchSeed,
   getStreakCode,
@@ -133,7 +133,7 @@ export default class Game {
   }
 
   #locHasChanged(seed: Seed) {
-    return !latLngEqual(seed.rounds.at(-1)!, this.getLocation())
+    return !compareLatLng(seed.rounds.at(-1)!, this.getLocation())
   }
 
   // @ts-ignore
@@ -260,7 +260,8 @@ export default class Game {
     }
 
     const distance = haversineDistance(location, this.location!)
-    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring)
+    let modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
+    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
       const didUserWinLastRound = this.#db.didUserWinLastRound('BROADCASTER', this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
       if(didUserWinLastRound){
@@ -311,13 +312,13 @@ export default class Game {
     }
 
     const previousGuess = this.#db.getUserPreviousGuess(dbUser.id)
-
-    if (previousGuess && latLngEqual(previousGuess, location) && !forceGuess) {
+    if (previousGuess && compareLatLng(previousGuess, location)) {
       throw Object.assign(new Error('Same guess'), { code: 'submittedPreviousGuess' })
     }
 
     const distance = haversineDistance(location, this.location!)
-    var score = calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring)
+    const modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
+    var score = calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
 
       const didUserWinLastRound = this.#db.didUserWinLastRound(dbUser.id, this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
@@ -335,7 +336,7 @@ export default class Game {
     if (
       lastStreak &&
       this.lastLocation &&
-      !latLngEqual(lastStreak.lastLocation, this.lastLocation)
+      !compareLatLng(lastStreak.lastLocation, this.lastLocation)
     ) {
       this.#db.resetUserStreak(dbUser.id)
     }
