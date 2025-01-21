@@ -1,7 +1,7 @@
 import pMap from 'p-map'
 
 import {
-  latLngEqual,
+  compareLatLng,
   calculateScale,
   fetchSeed,
   getStreakCode,
@@ -133,7 +133,7 @@ export default class Game {
   }
 
   #locHasChanged(seed: Seed) {
-    return !latLngEqual(seed.rounds.at(-1)!, this.getLocation())
+    return !compareLatLng(seed.rounds.at(-1)!, this.getLocation())
   }
 
   // @ts-ignore
@@ -311,7 +311,8 @@ export default class Game {
       throw Object.assign(new Error('User already guessed'), { code: 'alreadyGuessed' })
     }
 
-    if (dbUser.previousGuess && latLngEqual(dbUser.previousGuess, location) && !forceGuess) {
+    const previousGuess = this.#db.getUserPreviousGuess(dbUser.id)
+    if (previousGuess && compareLatLng(previousGuess, location)) {
       throw Object.assign(new Error('Same guess'), { code: 'submittedPreviousGuess' })
     }
 
@@ -335,7 +336,7 @@ export default class Game {
     if (
       lastStreak &&
       this.lastLocation &&
-      !latLngEqual(lastStreak.lastLocation, this.lastLocation)
+      !compareLatLng(lastStreak.lastLocation, this.lastLocation)
     ) {
       this.#db.resetUserStreak(dbUser.id)
     }
@@ -386,9 +387,6 @@ export default class Game {
       this.#db.createGuess(this.#roundId!, dbUser.id, guess)
     }
     
-
-    // TODO save previous guess? No, fetch previous guess from the DB
-    this.#db.setUserPreviousGuess(dbUser.id, location)
 
     return {
       player: {
