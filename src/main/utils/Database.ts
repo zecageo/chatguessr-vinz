@@ -5,6 +5,7 @@ function timestamp() {
   return Math.floor(Date.now() / 1000)
 }
 
+//
 // NEVER modify existing migrations, ONLY add new ones.
 const migrations: ((db: SQLite.Database) => void)[] = [
   function initialSetup(db) {
@@ -187,7 +188,7 @@ const migrations: ((db: SQLite.Database) => void)[] = [
     db.prepare(`ALTER TABLE guesses ADD COLUMN is_random_plonk INTEGER DEFAULT NULL`).run()
   },
   function createRoundMode(db) {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()  
+    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()
   },
     function removeUsersPreviousGuessField(db) {
       db.prepare(`ALTER TABLE users DROP COLUMN previous_guess`).run()
@@ -1010,12 +1011,12 @@ ORDER BY
     LIMIT 100
   `)
   const victoriesQuery = this.#db.prepare(`
-    SELECT CASE 
+    SELECT CASE
         WHEN games.game_winner IS NOT NULL THEN games.game_winner
-        ELSE game_winners.user_id 
+        ELSE game_winners.user_id
     END AS uid, users.username, users.avatar, users.color, users.flag, COUNT(*) AS victories
     FROM game_winners, users
-    LEFT JOIN 
+    LEFT JOIN
         games ON game_winners.id = games.id
     WHERE users.id = uid
     AND game_winners.created_at > users.reset_at
@@ -1026,7 +1027,7 @@ ORDER BY
     ORDER BY victories DESC
     LIMIT 100
     `);
-    
+
   const perfectQuery = this.#db.prepare(`
     SELECT users.id, users.username, users.avatar, users.color, users.flag, COUNT(guesses.id) AS perfects
     FROM users
