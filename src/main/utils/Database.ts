@@ -883,6 +883,13 @@ ORDER BY
 
 
   getOrCreateUser(id: string, username: string, avatar: string | undefined, color = '#FFF') {
+    if(avatar == undefined) {
+      return this.getOrCreateUserWithoutAvatar(id, username, color)
+    }
+    return this.getOrCreateUserWithAvatar(id, username, avatar, color)
+  }
+
+  getOrCreateUserWithAvatar(id: string, username: string, avatar: string | undefined, color = '#FFF') {
     const stmt = this.#db.prepare(`
       INSERT INTO users(id, username, avatar, color)
       VALUES (:id, :username, :avatar, :color)
@@ -894,6 +901,21 @@ ORDER BY
       RETURNING *
     `)
     const user = stmt.get({ id, username, avatar, color })
+
+    return user ? this.#parseUser(user) : undefined
+  }
+
+  getOrCreateUserWithoutAvatar(id: string, username: string, color = '#FFF') {
+    const stmt = this.#db.prepare(`
+      INSERT INTO users(id, username, color)
+      VALUES (:id, :username, :color)
+      ON CONFLICT (id) DO
+        UPDATE SET
+          username = :username,
+          color = :color
+      RETURNING *
+    `)
+    const user = stmt.get({ id, username, color })
 
     return user ? this.#parseUser(user) : undefined
   }
