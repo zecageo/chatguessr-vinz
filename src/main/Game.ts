@@ -386,7 +386,6 @@ export default class Game {
     else {
       this.#db.createGuess(this.#roundId!, dbUser.id, guess)
     }
-    
 
     return {
       player: {
