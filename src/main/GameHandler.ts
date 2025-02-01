@@ -656,6 +656,11 @@ export default class GameHandler {
     ipcMain.on('add-banned-user', (_event, username: string) => {
       this.#db.addBannedUser(username)
     })
+    ipcMain.on('send-pano', (_event, pano: string) => {
+      // get id of ongoing round
+      let roundId = this.#game.getRoundId()
+      this.#db.updatePano(pano, roundId)
+    })
 
     ipcMain.on('delete-banned-user', (_event, username: string) => {
       this.#db.deleteBannedUser(username)
@@ -834,6 +839,7 @@ export default class GameHandler {
   }
 
   async #handleGuess(userstate: UserData, message: string, isRandomPlonk: boolean = false) {
+    if(settings.isRandomPlonkOnlyMode && !isRandomPlonk) return
     console.log("inside handleGuess")
     console.log("userstate: ", userstate)
     console.log("message: ", message)

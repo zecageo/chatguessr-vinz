@@ -256,6 +256,8 @@ onBeforeUnmount(
     console.log("isBRMode", isBRMode.value)
     modeHelp.value = _modeHelp
     gameState.value = 'in-round'
+    
+
 
     currentLocation.value = location
     if (satelliteMode.value.enabled) {
@@ -263,7 +265,7 @@ onBeforeUnmount(
     } else {
       rendererApi.hideSatelliteMap()
     }
-
+    
     scoreboard.value!.onStartRound()
     if (restoredGuesses.length > 0) {
       if (isMultiGuess.value) {
@@ -272,9 +274,17 @@ onBeforeUnmount(
         scoreboard.value!.restoreGuesses(restoredGuesses as RoundResult[])
       }
     }
+    sendPano()
   })
 )
 
+// send pano to backend
+function sendPano() {
+  window.setTimeout(() => {
+    let pano = MWStreetViewInstance.getPano()
+    chatguessrApi.sendPano(pano)
+  }, 500)
+}
 function getClosestHeadingPano(currentHeading: number, streetViewInstance): string | boolean{
   let links = streetViewInstance.getLinks()
   let linksByDistance: { heading: number, distance: number, panoId: string }[] = []
@@ -297,6 +307,7 @@ onBeforeUnmount(
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
     scoreboard.value!.onStartRound()
+    sendPano()
   })
 )
 onBeforeUnmount(

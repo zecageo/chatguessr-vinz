@@ -25,6 +25,13 @@
             max="200"
           />
         </label>
+        <label
+          class="form__group"
+          data-tip="Only Randomplonks"
+        >
+          Only Randomplonks
+          <input v-model="settings.isRandomPlonkOnlyMode" type="checkbox" />
+        </label>
       </div>
       <hr />
 
@@ -281,53 +288,66 @@
     </label>
 
     <hr />
-  <h2>Countdown /-up / ABC / Alphabet Settings</h2>
-  <label class="form__group" data-tip="Standard Mode">
-    Standard Mode
-    <input type="radio" v-model="settings.countdownMode" value="normal" />
-  </label>
-  <label class="form__group" data-tip="Countdown">
-    Countdown
-    <input type="radio" v-model="settings.countdownMode" value="countdown" />
-  </label>
+    <div class="grid-col">
+      <div>
+        <h2>Countdown /-up / ABC / Alphabet Settings</h2>
+        <label class="form__group" data-tip="Standard Mode">
+          Standard Mode
+          <input type="radio" v-model="settings.countdownMode" value="normal" />
+        </label>
+        <label class="form__group" data-tip="Countdown">
+          Countdown
+          <input type="radio" v-model="settings.countdownMode" value="countdown" />
+        </label>
 
-  <label class="form__group" data-tip="Countup">
-    Countup
-    <input type="radio" v-model="settings.countdownMode" value="countup" />
-  </label>
-  <label class="form__group" data-tip="Alphabetical A=>Z">
-    Alphabetical A=>Z
-    <input type="radio" v-model="settings.countdownMode" value="alphabeticalAZ" />
-  </label>
-  <label class="form__group" data-tip="Alphabetical Z=>A">
-    Alphabetical Z=>A
-    <input type="radio" v-model="settings.countdownMode" value="alphabeticalZA" />
-  </label>
-  <label class="form__group" data-tip="ABC">
-    ABC
-    <input type="radio" v-model="settings.countdownMode" value="abc" />
-  </label>
-              
-  <label class="form__group" data-tip="Letters for ABC Mode">
-        Letters for ABC Mode:
-        <input v-model.trim="settings.ABCModeLetters" v-on:keypress="isLetter($event)"type="text" spellcheck="false" :disabled="settings.countdownMode!='abc'" />
-      </label>
+        <label class="form__group" data-tip="Countup">
+          Countup
+          <input type="radio" v-model="settings.countdownMode" value="countup" />
+        </label>
+        <label class="form__group" data-tip="Alphabetical A=>Z">
+          Alphabetical A=>Z
+          <input type="radio" v-model="settings.countdownMode" value="alphabeticalAZ" />
+        </label>
+        <label class="form__group" data-tip="Alphabetical Z=>A">
+          Alphabetical Z=>A
+          <input type="radio" v-model="settings.countdownMode" value="alphabeticalZA" />
+        </label>
+        <label class="form__group" data-tip="ABC">
+          ABC
+          <input type="radio" v-model="settings.countdownMode" value="abc" />
+        </label>
+                    
+        <label class="form__group" data-tip="Letters for ABC Mode">
+              Letters for ABC Mode:
+              <input v-model.trim="settings.ABCModeLetters" v-on:keypress="isLetter($event)"type="text" spellcheck="false" :disabled="settings.countdownMode!='abc'" />
+            </label>
 
-  <hr />
+      </div>
+      <div>
+        <h2>Ocean Plonk Settings</h2>
+        <label class="form__group" data-tip="0 Points for Plonks on Land">
+          Only Ocean Plonk Mode
+          <input type="radio" v-model="settings.waterPlonkMode" value="mandatory" />
+        </label>
+        <label class="form__group" data-tip="Standard Mode">
+          Normal Ocean Plonk Mode
+          <input type="radio" v-model="settings.waterPlonkMode" value="normal" />
+        </label>
+        <label class="form__group" data-tip="0 Points for Plonks in international Waters">
+          Ocean Plonks Illegal Mode
+          <input type="radio" v-model="settings.waterPlonkMode" value="illegal" />
+        </label>
+        <hr />
+        <h2>Score Modifiers minus points if wrong country</h2>
+        <label class="form__group" data-tip="Minus Points if wrong Country">
+          Score Modifier minus points if wrong country
+          <input v-model="settings.modifierMinusPointsIfWrongCountry" type="number" />
+        </label>
+      </div>
+    </div>
+
+
   
-  <h2>Ocean Plonk Settings</h2>
-  <label class="form__group" data-tip="0 Points for Plonks on Land">
-    Only Ocean Plonk Mode
-    <input type="radio" v-model="settings.waterPlonkMode" value="mandatory" />
-  </label>
-  <label class="form__group" data-tip="Standard Mode">
-    Normal Ocean Plonk Mode
-    <input type="radio" v-model="settings.waterPlonkMode" value="normal" />
-  </label>
-  <label class="form__group" data-tip="0 Points for Plonks in international Waters">
-    Ocean Plonks Illegal Mode
-    <input type="radio" v-model="settings.waterPlonkMode" value="illegal" />
-  </label>
 
 
   </div>
@@ -599,7 +619,7 @@ const tabs = shallowRef([
 
 const settings = reactive<Settings>(await chatguessrApi.getSettings())
 watch(settings, () => {
-  chatguessrApi.saveSettings({ ...settings })
+  chatguessrApi.saveSettings(JSON.parse(JSON.stringify(settings)))
 })
 
 const newChannelName = shallowRef(settings.channelName)

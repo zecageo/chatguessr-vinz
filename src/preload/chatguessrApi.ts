@@ -135,6 +135,10 @@ export const chatguessrApi = {
   onRefreshRound(callback: (location: Location_) => void) {
     return ipcRendererOn('refreshed-in-game', callback)
   },
+  sendPano(pano: string): void {
+    console.log("about to send pano", pano)
+    ipcRenderer.send('send-pano', pano)
+  },
 
   onGuessesOpenChanged(callback: (open: boolean) => void) {
     const remove = [

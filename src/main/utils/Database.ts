@@ -5,6 +5,7 @@ function timestamp() {
   return Math.floor(Date.now() / 1000)
 }
 
+//
 // NEVER modify existing migrations, ONLY add new ones.
 const migrations: ((db: SQLite.Database) => void)[] = [
   function initialSetup(db) {
@@ -187,7 +188,10 @@ const migrations: ((db: SQLite.Database) => void)[] = [
     db.prepare(`ALTER TABLE guesses ADD COLUMN is_random_plonk INTEGER DEFAULT NULL`).run()
   },
   function createRoundMode(db) {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()
+    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()  
+  },
+    function removeUsersPreviousGuessField(db) {
+      db.prepare(`ALTER TABLE users DROP COLUMN previous_guess`).run()
   }
 ]
 
@@ -197,7 +201,7 @@ const migrations: ((db: SQLite.Database) => void)[] = [
 const customMigrations: ((db: SQLite.Database) => void)[] = [
   function createGameWinner(db){
     db.prepare(`ALTER TABLE games ADD COLUMN game_winner TEXT DEFAULT NULL`).run()
-    }
+  }
 ]
 
 class db {
@@ -370,6 +374,26 @@ class db {
     })
   }
 
+  updatePano(panoId: string, roundId: string| undefined) {
+    // get location from roundId
+    if(!roundId) {
+      return
+    }
+    const stmt = this.#db.prepare(`SELECT location from rounds WHERE id = ?`)
+    let location = stmt.get(roundId)
+    if (!location) {
+      return
+    }
+    let loc = JSON.parse(location["location"])
+    // update location with panoId
+    loc.panoId = panoId
+    console.log("location", location)
+    const updateRound = this.#db.prepare(`UPDATE rounds SET location = :location WHERE id = :id`)
+    updateRound.run({
+      id: roundId,
+      location: JSON.stringify(loc)
+    })
+  }
   getLastRoundLocation() {
     const stmt = this.#db
       .prepare(`SELECT location from rounds ORDER BY created_at DESC LIMIT 1`)
@@ -828,7 +852,6 @@ ORDER BY
     avatar: string | null
     color: string
     flag: string | null
-    previousGuess: LatLng
     resetAt: number
   } {
     return {
@@ -837,7 +860,6 @@ ORDER BY
       avatar: record.avatar,
       color: record.color,
       flag: record.flag,
-      previousGuess: record.previous_guess ? JSON.parse(record.previous_guess) : null,
       resetAt: record.reset_at * 1000
     }
   }
@@ -845,7 +867,7 @@ ORDER BY
   getUser(id: string) {
     const user = this.#db
       .prepare(
-        'SELECT id, username, avatar, color, flag, previous_guess, reset_at FROM users WHERE id = ?'
+        'SELECT id, username, avatar, color, flag, reset_at FROM users WHERE id = ?'
       )
       .get(id)
 
@@ -854,7 +876,7 @@ ORDER BY
 
   getUserByUsername(username: string) {
     // case-insensitive search
-    const user = this.#db.prepare('SELECT id, username, avatar, color, flag, previous_guess, reset_at FROM users WHERE username = ? COLLATE NOCASE').get(username)
+    const user = this.#db.prepare('SELECT id, username, avatar, color, flag, reset_at FROM users WHERE username = ? COLLATE NOCASE').get(username)
 
     return user ? this.#parseUser(user) : undefined
   }
@@ -883,11 +905,12 @@ ORDER BY
     })
   }
 
-  setUserPreviousGuess(userId: string, previousGuess: LatLng) {
-    this.#db.prepare(`UPDATE users SET previous_guess = :previousGuess WHERE id = :id`).run({
-      id: userId,
-      previousGuess: JSON.stringify(previousGuess)
-    })
+  getUserPreviousGuess(userId: string): LatLng | undefined {
+    const stmt = this.#db.prepare(
+      `SELECT location FROM guesses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+    )
+    const record = stmt.get(userId) as { location: string } | undefined
+    return record ? JSON.parse(record.location) : undefined
   }
 
   getNumberOfGamesInRoundFromRoundId(roundId: string): number {
@@ -988,12 +1011,12 @@ ORDER BY
     LIMIT 100
   `)
   const victoriesQuery = this.#db.prepare(`
-    SELECT CASE 
+    SELECT CASE
         WHEN games.game_winner IS NOT NULL THEN games.game_winner
-        ELSE game_winners.user_id 
+        ELSE game_winners.user_id
     END AS uid, users.username, users.avatar, users.color, users.flag, COUNT(*) AS victories
     FROM game_winners, users
-    LEFT JOIN 
+    LEFT JOIN
         games ON game_winners.id = games.id
     WHERE users.id = uid
     AND game_winners.created_at > users.reset_at
@@ -1004,7 +1027,7 @@ ORDER BY
     ORDER BY victories DESC
     LIMIT 100
     `);
-    
+
   const perfectQuery = this.#db.prepare(`
     SELECT users.id, users.username, users.avatar, users.color, users.flag, COUNT(guesses.id) AS perfects
     FROM users

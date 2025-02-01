@@ -70,7 +70,7 @@ export async function fetchSeed(url: string): Promise<Seed | undefined> {
 /**
  * Compare two coordinates
  */
-export function latLngEqual(a: LatLng, b: LatLng) {
+export function compareLatLng(a: LatLng, b: LatLng) {
   return a.lat === b.lat && a.lng === b.lng
 }
 
@@ -128,37 +128,47 @@ export function haversineDistance(mk1: LatLng, mk2: LatLng): number {
 /**
  * Returns score based on distance and scale
  */
-export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean)  {
+
+function modifyScore(score: number, modifier: number): number {
+  score = score + modifier 
+  if (score < 0) score = 0
+  return score
+}
+
+export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean, modifierMinusPointsIfWrongCountry: number): number {
+  let modifier = 0
+  if (!isCorrectCountry) modifier = - modifierMinusPointsIfWrongCountry
   if (isCorrectCountry && isClosestInWrongCountryModeActivated) return 0
   if (waterPlonkMode == "illegal" && !isPlonkOnLand) return 0
   if (waterPlonkMode == "mandatory" && isPlonkOnLand) return 0
   if (!invertScores){
-    if (distance * 1000 < 25) return 5000
-    return Math.round(5000 * Math.pow(0.99866017, (distance * 1000) / scale))
+    if (distance * 1000 < 25) return 5000 + modifier
+    return modifyScore(Math.round(5000 * Math.pow(0.99866017, (distance * 1000) / scale)) ,modifier)
   }
   else{
     if (distance > 19869)
-      return 5000
+      return modifyScore(5000 ,modifier)
     if (distance > 15000){
-      return 4999 - Math.round(Math.round(19869 - distance)*0.2052)
+      return modifyScore(4999 - Math.round(Math.round(19869 - distance)*0.2052) ,modifier)
     }
 
     if (distance > 7500){
-      return 4000 - Math.round(Math.round(15000  - distance)*0.4)
+      return modifyScore(4000 - Math.round(Math.round(15000  - distance)*0.4) ,modifier)
     }
 
     if (distance > 5000){
-      return 1000 - Math.round(Math.round(7500  - distance)*0.2)
+      return modifyScore(1000 - Math.round(Math.round(7500  - distance)*0.2) ,modifier)
     }
 
     if (distance > 2500){
-      return 500 - Math.round(Math.round(5000  - distance)*0.1)
+      return modifyScore(500 - Math.round(Math.round(5000  - distance)*0.1) ,modifier)
     }
   }
 
   if (distance > 100){
-    return 250 - Math.round(Math.round(2500  - distance)*0.1)
+    return modifyScore(250 - Math.round(Math.round(2500  - distance)*0.1) ,modifier)
   }
+
   return 0
 
 }
