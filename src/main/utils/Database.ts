@@ -188,7 +188,7 @@ const migrations: ((db: SQLite.Database) => void)[] = [
     db.prepare(`ALTER TABLE guesses ADD COLUMN is_random_plonk INTEGER DEFAULT NULL`).run()
   },
   function createRoundMode(db) {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()
+    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()  
   },
     function removeUsersPreviousGuessField(db) {
       db.prepare(`ALTER TABLE users DROP COLUMN previous_guess`).run()
@@ -201,9 +201,6 @@ const migrations: ((db: SQLite.Database) => void)[] = [
 const customMigrations: ((db: SQLite.Database) => void)[] = [
   function createGameWinner(db){
     db.prepare(`ALTER TABLE games ADD COLUMN game_winner TEXT DEFAULT NULL`).run()
-  },
-  function createRoundMode(db) {
-    db.prepare(`ALTER TABLE rounds ADD COLUMN isInvertedScoring INTEGER DEFAULT NULL`).run()
   }
 ]
 
