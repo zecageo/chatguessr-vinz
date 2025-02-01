@@ -50,8 +50,9 @@ export const chatguessrApi = {
   deleteBannedUser(username: string) {
     ipcRenderer.send('delete-banned-user', username)
   },
-  returnMyLastLoc(url: string, username: string): void {
-    ipcRenderer.send('return-my-last-loc', url, username)
+  returnMyLastLoc(url: string, username: string, locationNumber: number): void {
+    console.log("locationnumber inside returnMyLastLoc", locationNumber)
+    ipcRenderer.send('return-my-last-loc', url, username, locationNumber)
 
   },
 
@@ -110,7 +111,7 @@ export const chatguessrApi = {
   onZoomOut(callback: (value) => void) {
     return ipcRendererOn('zoom-out', callback)
   },
-  onRetrieveMyLastLoc(callback: (location: Location_, username:string) => void) {
+  onRetrieveMyLastLoc(callback: (location: Location_, username:string, locationNumber: number) => void) {
     return ipcRendererOn('retrieve-my-last-loc', callback)
   },
   onShowRoundResults(
