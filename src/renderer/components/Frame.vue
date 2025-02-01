@@ -478,7 +478,8 @@ onBeforeUnmount(
 )
 
 onBeforeUnmount(
-  chatguessrApi.onRetrieveMyLastLoc(async (location, username) => {
+  chatguessrApi.onRetrieveMyLastLoc(async (location, username, locationNumber) => {
+    console.log("locationnumber", locationNumber)
     function computeDistanceBetween(coords1, coords2) {
       return google.maps.geometry.spherical.computeDistanceBetween(
         coords1,
@@ -520,7 +521,7 @@ onBeforeUnmount(
       break;
     }
   }
-  chatguessrApi.returnMyLastLoc(pano.url, username)        
+  chatguessrApi.returnMyLastLoc(pano.url, username, locationNumber)        
 
 
 

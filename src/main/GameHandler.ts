@@ -665,14 +665,23 @@ export default class GameHandler {
     ipcMain.on('delete-banned-user', (_event, username: string) => {
       this.#db.deleteBannedUser(username)
     })
-    ipcMain.on('return-my-last-loc', (_event, url: string, username: string) => {
+    ipcMain.on('return-my-last-loc', (_event, url: string, username: string, locationNumber: number) => {
       console.log("inside backend getting the url: ", url)
       console.log("this.#backend: ", this.#backend)
+      
+      let numberSpecifier = "last"
+      if(locationNumber ==  1) numberSpecifier = "second to last"
+      if(locationNumber ==  2) numberSpecifier = "third to last"
+      if(locationNumber ==  3) numberSpecifier = "fourth to last"
+      if(locationNumber ==  4) numberSpecifier = "fifth to last"
+
       if(!url || url === ""){
-        this.#backend?.sendMessage(username+': There is no official coverage within 250km of your latest guess.', { system: true })  
+        this.#backend?.sendMessage(username+': There is no official coverage within 250km of your '+numberSpecifier+' guess.', { system: true })  
       }
-      else
-        this.#backend?.sendMessage(username+': The closest official coverage to your last guess is: '+url, { system: true })
+      else{
+        this.#backend?.sendMessage(username+': The closest official coverage to your '+numberSpecifier+' guess is: '+url, { system: true })
+      }
+        
     })
     ipcMain.handle('get-streamer-random-plonk-lat-lng', () => {
       this.#streamerDidRandomPlonk = true
@@ -1137,7 +1146,7 @@ export default class GameHandler {
       }
       const lastLocation = last5Locations[locationNumber]
       let username = userstate['display-name']
-      this.#win.webContents.send('retrieve-my-last-loc', lastLocation.location, username)
+      this.#win.webContents.send('retrieve-my-last-loc', lastLocation.location, username, locationNumber)
 
       return
       const streetViewService = new google.maps.StreetViewService();
