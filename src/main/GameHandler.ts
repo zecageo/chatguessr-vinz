@@ -109,6 +109,10 @@ export default class GameHandler {
       if(settings.showRoundStarted && !isRestartClick)
         this.#backend?.sendMessage(settings.messageRoundStarted.replace("<round>", this.#game.round.toString()), { system: true })
       this.openGuesses()
+      if(this.#game.round === 3){
+        // start map voting
+        
+      }
     }
   }
 
@@ -1026,8 +1030,11 @@ export default class GameHandler {
     
 
   //////////
+    let quit = false
+    if(!message.startsWith('!')) quit = true
+    if(message.startsWith('duDudu')) quit = false
 
-    if (!message.startsWith('!')) return
+    if (quit) return
     if (!userstate['user-id'] || !userstate['display-name']) return
 
     const userId = userstate.badges?.broadcaster === '1' ? 'BROADCASTER' : userstate['user-id']
@@ -1324,7 +1331,8 @@ export default class GameHandler {
     }
         // KEEP THIS AT THE END, BECAUSE OTHERWISE IT MIGHT CONFLICT WITH OTHER COMMANDS LIKE RANDOMPLONKWATER
     // if first chars of message are equal to settings of randomplonkcmd check if it is randomplonkcmd
-    if(message.startsWith(settings.randomPlonkCmd) || message.substring(0,3) == "!rp" || message.substring(0,3) == "!рп"){
+    console.log("message: ", message)
+    if(message.startsWith(settings.randomPlonkCmd) || message.substring(0,3) == "!rp" || message.substring(0,3) == "!рп" || message.substring(0,6) == "dududu"){
       
       
       if(userstate.username === "temp_rsix" || userstate.username === "twitchsmurf_rl")
