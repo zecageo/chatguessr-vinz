@@ -72,7 +72,7 @@ export default class Game {
     this.lastLocation = this.#db.getLastRoundLocation()
   }
 
-  async start(url: string, isMultiGuess: boolean) {
+  async start(url: string, isMultiGuess: boolean, brCounter: { [key: string]: number }) {
 
     this.isGiftingPointsGame = this.#settings.isGiftingPointsGame
     this.gamePointGift = this.#settings.gamePointGift
@@ -91,7 +91,14 @@ export default class Game {
     this.isInGame = true
     this.isMultiGuess = isMultiGuess
     if (this.#url === url) {
-      await this.refreshSeed()
+      await this.refreshSeed({
+        disappointed:{
+          callbacks: {},
+        },
+        pay2Win:{
+          callbacks: {},
+        }
+      },brCounter = brCounter)
     } else {
       this.#url = url
       this.seed = await this.#getSeed()
@@ -137,7 +144,7 @@ export default class Game {
   }
 
   // @ts-ignore
-  async refreshSeed(callbackFunctions: redeemCallbackFunctions = {}) {
+  async refreshSeed(callbackFunctions: redeemCallbackFunctions = {}, brCounter: { [key: string]: number }) {
     const newSeed = await this.#getSeed()
     let omitBroadcasterGuess = false
 
@@ -261,7 +268,10 @@ export default class Game {
 
     const distance = haversineDistance(location, this.location!)
     let modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
-    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry)
+
+    let subtractedBRPoints = 0
+
+    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
       const didUserWinLastRound = this.#db.didUserWinLastRound('BROADCASTER', this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
       if(didUserWinLastRound){
@@ -318,7 +328,13 @@ export default class Game {
 
     const distance = haversineDistance(location, this.location!)
     const modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
-    var score = calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry)
+    let subtractedBRPoints = 0
+    if(this.#settings.isBRMode){
+      if(this.#settings.battleRoyaleSubtractedPoints > 0){
+        subtractedBRPoints = this.#settings.battleRoyaleSubtractedPoints *  (brCounter - 1)
+      }
+    }
+    var score = calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
 
       const didUserWinLastRound = this.#db.didUserWinLastRound(dbUser.id, this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
@@ -458,8 +474,14 @@ export default class Game {
     }
     if(this.#settings.isBRMode){
       parts.push("Battle Royale " + this.#settings.battleRoyaleReguessLimit + " guesses")
+      if(this.#settings.battleRoyaleSubtractedPoints > 0){
+        parts.push("BR -" + this.#settings.battleRoyaleSubtractedPoints + " points per guess")
+      }
     }
 
+    if(this.#settings.allowMinus){
+      parts.push("Points can go negative")
+    }
 
 
     if (this.#settings.isDartsMode)
@@ -514,6 +536,11 @@ export default class Game {
     if(this.#settings.exclusiveMode){
       this.#db.updateGuessesToExclusive(this.#roundId!)
     }
+    // if(this.#settings.isBRMode){
+    //   console.log(brCounter)
+    //   //this.#db.updateGuessesToBR(this.#roundId!, brCounter, 0, false)////////
+    // }
+    
     return this.#db.getRoundResults(this.#roundId!)
   }
 

@@ -210,7 +210,15 @@
     Exclusive mode
       <input v-model="settings.exclusiveMode" type="checkbox" />
     </label>
-  
+      
+    <label
+      class="form__group"
+      data-tip="Allow Minus Points"
+    >
+      Allow Minus Points (on BR Subtract Points)
+      <input v-model="settings.allowMinus" type="checkbox" />
+    </label>
+
     <hr />
     <h2>Game of Chicken Settings</h2>
 
@@ -285,6 +293,15 @@
       data-tip="Max Lives">
       Maximum Number of Guess Changes Per Round:
       <input v-model.trim="settings.battleRoyaleReguessLimit" type="text" spellcheck="false" :disabled="!settings.isBRMode"/>
+    </label>
+
+
+    <label 
+      class="form__group"
+      :class="{ 'form__group__disabled' : settings.isBRMode === false}" 
+      data-tip="Subtrated Points per Guess">
+      Number of Points subtracted per Guess:
+      <input v-model.trim="settings.battleRoyaleSubtractedPoints" type="text" spellcheck="false" :disabled="!settings.isBRMode"/>
     </label>
 
     <hr />

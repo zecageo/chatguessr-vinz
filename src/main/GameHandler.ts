@@ -479,7 +479,7 @@ export default class GameHandler {
         if (!this.#backend) return
 
         this.#game
-          .start(url, settings.isMultiGuess)
+          .start(url, settings.isMultiGuess, this.#battleRoyaleCounter)
           .then(() => {
             const restoredGuesses = this.#game.isMultiGuess
               ? this.#game.getRoundParticipants()
@@ -590,7 +590,7 @@ export default class GameHandler {
       this.#pay2WinUsers = []
     }
 
-      this.#game.refreshSeed(callbackFunctions).then((roundResults) => {
+      this.#game.refreshSeed(callbackFunctions, this.#battleRoyaleCounter).then((roundResults) => {
         if (roundResults && roundResults.location) {
           this.#showRoundResults(roundResults.location, roundResults.roundResults)
         }
@@ -1326,9 +1326,7 @@ export default class GameHandler {
     // if first chars of message are equal to settings of randomplonkcmd check if it is randomplonkcmd
     if(message.startsWith(settings.randomPlonkCmd) || message.substring(0,3) == "!rp" || message.substring(0,3) == "!рп"){
       
-      
-      if(userstate.username === "temp_rsix" || userstate.username === "twitchsmurf_rl")
-        return
+
       if (!this.#game.isInGame) return
 
     if(message.indexOf(" ") >= 0){
@@ -1390,8 +1388,6 @@ export default class GameHandler {
     
     // move commands
     if(this.#game && this.#game.seed && this.TMPZ){
-      if(userstate.username === "temp_rsix" || userstate.username === "twitchsmurf_rl")
-        return
       if(!this.#game.seed.forbidMoving){
         if(userstate && userstate.username){
           if(!this.#moveCommandTimeKeeper[userstate.username]){
