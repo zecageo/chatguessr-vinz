@@ -1,6 +1,6 @@
 import axios from 'axios'
 import countryIso from 'coordinate_to_country'
-import { session } from 'electron'
+const { session } = require('electron')
 import countryBoundingBoxes from '../lib/countryBoundingBoxes.json'
 
 /**
@@ -135,7 +135,14 @@ function modifyScore(score: number, modifier: number, allowMinus: boolean): numb
   return score
 }
 
-export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean, modifierMinusPointsIfWrongCountry: number, isBRMode: boolean, battleRoyaleSubtractedPoints: number, allowMinus: boolean): number {
+export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean, modifierMinusPointsIfWrongCountry: number, isBRMode: boolean, battleRoyaleSubtractedPoints: number, allowMinus: boolean,  maxErrorDistance?:number): number {
+  
+  if (!maxErrorDistance) {
+    const score = 5000 * Math.pow(0.99866017, (distance * 1000) / scale)
+    return Math.round(score)
+  }
+  const score = Math.round(5000 * Math.exp(-10 * ((distance * 1000) / maxErrorDistance)))
+  
   let modifier = 0
   if (!isCorrectCountry) modifier = - modifierMinusPointsIfWrongCountry
   if(isBRMode && battleRoyaleSubtractedPoints > 0)
@@ -144,12 +151,9 @@ export function calculateScore(distance: number, scale: number, isCorrectCountry
   if (waterPlonkMode == "illegal" && !isPlonkOnLand) return 0
   if (waterPlonkMode == "mandatory" && isPlonkOnLand) return 0
   if (!invertScores){
-    if (distance * 1000 < 25) return 5000 + modifier
-    return modifyScore(Math.round(5000 * Math.pow(0.99866017, (distance * 1000) / scale)) ,modifier, allowMinus)
+    return modifyScore(score ,modifier, allowMinus)
   }
   else{
-    if (distance > 19869)
-      return modifyScore(5000 ,modifier, allowMinus)
     if (distance > 15000){
       return modifyScore(4999 - Math.round(Math.round(19869 - distance)*0.2052) ,modifier, allowMinus)
     }

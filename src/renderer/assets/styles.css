@@ -283,11 +283,21 @@ textarea:focus {
 
 /* GLOBAL MAP RENDERER */
 /* Small trick to select guess marker avatars cause we cannot add CSS class to google.maps.Marker */
-img[src$="#custom_marker"]{
-  border: 2px solid white !important;
-  border-radius: 50%;
+.custom-guess-marker {
+  position: relative;
+  pointer-events: auto !important;
+  top: 16px;
+  width: 30px;
+  height: 30px;
 }
 
+.custom-guess-marker--avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  outline: 3px solid white;
+  border-radius: 100%;
+}
 .guess-marker-label {
   background-color: white;
   border-radius: 50%;
@@ -295,6 +305,13 @@ img[src$="#custom_marker"]{
   font-weight: bold;
   width: 13px;
   height: 13px;
+}
+.custom-guess-marker--label {
+  background-color: white;
+  color:#000;
+  border-radius: 50%;
+  font-size: 14px !important;
+  font-weight: bold;
 }
 
 .username,

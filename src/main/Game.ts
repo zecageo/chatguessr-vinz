@@ -4,6 +4,7 @@ import {
   compareLatLng,
   calculateScale,
   fetchSeed,
+  fetchMap,
   getStreakCode,
   haversineDistance,
   calculateScore,
@@ -33,6 +34,8 @@ export default class Game {
   seed: Seed | undefined
 
   mapScale: number | undefined
+
+  maxErrorDistance: number | undefined
 
   location: Location_ | undefined
 
@@ -117,7 +120,10 @@ export default class Game {
           throw err
         }
       }
-
+      const fetchedMap = await fetchMap(this.seed.map)
+      if (fetchedMap) {
+        this.maxErrorDistance = fetchedMap.maxErrorDistance
+      }
       this.mapScale = calculateScale(this.seed.bounds)
       this.#assignStreakCode()
     }
@@ -271,7 +277,7 @@ export default class Game {
 
     let subtractedBRPoints = 0
 
-    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus)
+    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
       const didUserWinLastRound = this.#db.didUserWinLastRound('BROADCASTER', this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
       if(didUserWinLastRound){
@@ -334,7 +340,7 @@ export default class Game {
         subtractedBRPoints = this.#settings.battleRoyaleSubtractedPoints *  (brCounter - 1)
       }
     }
-    var score = calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus)
+    var score = calculateScore(distance, this.mapScale! ,await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
 
       const didUserWinLastRound = this.#db.didUserWinLastRound(dbUser.id, this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)

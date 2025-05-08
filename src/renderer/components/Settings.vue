@@ -188,17 +188,17 @@
   <div class="ml-05">
     <label
       class="form__group"
-      data-tip="Closest in wrong country mode"
+      data-tip="Wrong country mode"
     >
-      Closest in wrong country mode
+      Wrong country mode
       <input v-model="settings.isClosestInWrongCountryModeActivated" type="checkbox" />
     </label>
     
     <label
         class="form__group"
-        data-tip="Invert scoring (furthest plonk wins)"
+        data-tip="Antipode Mode (only normal scoring World Maps)"
       >
-      Invert scoring (furthest plonk wins)
+      Antipode Mode (only normal scoring World Maps)
         <input v-model="settings.invertScoring" type="checkbox" />
       </label>
 

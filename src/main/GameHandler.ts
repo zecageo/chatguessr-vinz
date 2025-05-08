@@ -1481,7 +1481,8 @@ export default class GameHandler {
 
 
     // streamer commands
-    if (process.env.NODE_ENV !== 'development' || userstate.badges?.broadcaster !== '1') return
+    //if (process.env.NODE_ENV !== 'development' || userstate.badges?.broadcaster !== '1') return
+    return
 
     if (message.startsWith('!spamguess')) {
       const max = parseInt(message.split(' ')[1] ?? '50', 10)
