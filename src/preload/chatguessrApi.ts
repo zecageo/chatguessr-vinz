@@ -75,7 +75,13 @@ export const chatguessrApi = {
   ) {
     return ipcRendererOn('game-started', callback)
   },
-
+  onRoundStarted(
+    callback: (
+      modeHelp: string[],
+    ) => void
+  ) {
+    return ipcRendererOn('round-started', callback)
+  },
   onGameQuit(callback: () => void) {
     return ipcRendererOn('game-quitted', callback)
   },

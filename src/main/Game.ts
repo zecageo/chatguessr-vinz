@@ -67,12 +67,55 @@ export default class Game {
   chickenModeSurvivesWith5k = false
   chickenMode5kGivesPoints = false
 
-
+  randomRoundMultiplier: number = 0
 
   constructor(db: Database, settings: Settings) {
     this.#db = db
     this.#settings = settings
     this.lastLocation = this.#db.getLastRoundLocation()
+
+  }
+  getRandomValueWithProbabilities() {
+    const randomNumber = Math.random() * 100; // Generate a random number between 0 and 99.99...
+
+    // Determine which category the random number falls into
+    if (randomNumber < 12) { // 1 - 12%
+      return 1;
+    } else if (randomNumber < 22) { // 2 - 10% (12 + 10)
+      return 2;
+    } else if (randomNumber < 32) { // 3-5 - 10% (22 + 10)
+      return Math.floor(Math.random() * (5 - 3 + 1)) + 3; // Random integer between 3 and 5
+    } else if (randomNumber < 42) { // 6-10 - 10% (32 + 10)
+      return Math.floor(Math.random() * (10 - 6 + 1)) + 6; // Random integer between 6 and 10
+    } else if (randomNumber < 49) { // 11-20 - 7% (42 + 7)
+      return Math.floor(Math.random() * (20 - 11 + 1)) + 11; // Random integer between 11 and 20
+    } else if (randomNumber < 56) { // 21-30 - 7% (49 + 7)
+      return Math.floor(Math.random() * (30 - 21 + 1)) + 21; // Random integer between 21 and 30
+    } else if (randomNumber < 63) { // 31-40 - 7% (56 + 7)
+      return Math.floor(Math.random() * (40 - 31 + 1)) + 31; // Random integer between 31 and 40
+    } else if (randomNumber < 70) { // 41-60 - 7% (63 + 7)
+      return Math.floor(Math.random() * (60 - 41 + 1)) + 41; // Random integer between 41 and 60
+    } else if (randomNumber < 75) { // 61-80 - 5% (70 + 5)
+      return Math.floor(Math.random() * (80 - 61 + 1)) + 61; // Random integer between 61 and 80
+    } else if (randomNumber < 78) { // 81-100 - 3% (75 + 3)
+      return Math.floor(Math.random() * (100 - 81 + 1)) + 81; // Random integer between 81 and 100
+    } else if (randomNumber < 90) { // 0.6-0.9 - 12% (78 + 12)
+      return Math.random() * (0.9 - 0.6) + 0.6; // Random float between 0.6 and 0.9
+    } else if (randomNumber < 97) { // 0.2-0.5 - 7% (90 + 7)
+      return Math.random() * (0.5 - 0.2) + 0.2; // Random float between 0.2 and 0.5
+    } else { // 0.1 - 3% (97 + 3)
+      return 0.1;
+    }
+  }
+
+  setRandomRoundMultiplier() {
+    this.randomRoundMultiplier = this.getRandomValueWithProbabilities()
+    // if the randomRoundMultiplier has decimal values, round it to 2 decimal places
+    this.randomRoundMultiplier = Math.round(this.randomRoundMultiplier * 100) / 100
+
+    console.log("about to send random round multiplier", this.randomRoundMultiplier)
+//    this.sendMultiplierToFrontend(this.randomRoundMultiplier)
+    return this.randomRoundMultiplier
   }
 
   async start(url: string, isMultiGuess: boolean, brCounter: { [key: string]: number }) {
@@ -209,6 +252,10 @@ export default class Game {
   }
 
   async #getSeed() {
+    // generate new randomMultiplier and send to frontend
+    if(this.randomRoundMultiplier === 0){
+      this.randomRoundMultiplier = this.setRandomRoundMultiplier()
+    }
     return this.#url ? await fetchSeed(this.#url) : undefined
   }
 
@@ -276,9 +323,10 @@ export default class Game {
     let modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
 
     let subtractedBRPoints = 0
-
-    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance)
-    if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
+    let numberofGamesInRoundFromRoundId = this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!)
+    console.log("numberofGamesInRoundFromRoundId", numberofGamesInRoundFromRoundId)
+    var score = streamerGuess.timedOut ? 0 : calculateScore(distance, this.mapScale!, await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance, numberofGamesInRoundFromRoundId, this.#settings.roundMultis, this.randomRoundMultiplier)
+    if(numberofGamesInRoundFromRoundId !== 1 && this.isGameOfChickenModeActivated){
       const didUserWinLastRound = this.#db.didUserWinLastRound('BROADCASTER', this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
       if(didUserWinLastRound){
         if (!(this.chickenMode5kGivesPoints && score == 5000))
@@ -297,6 +345,9 @@ export default class Game {
       isRandomPlonk: this.streamerDidRandomPlonk ? 1 : 0
     })
     this.streamerDidRandomPlonk = false
+    setTimeout(() => {
+      this.randomRoundMultiplier = this.setRandomRoundMultiplier()
+    }, 1000)
   }
   
 
@@ -336,11 +387,15 @@ export default class Game {
     const modifierMinusPointsIfWrongCountry = this.#settings.modifierMinusPointsIfWrongCountry
     let subtractedBRPoints = 0
     if(this.#settings.isBRMode){
-      if(this.#settings.battleRoyaleSubtractedPoints > 0){
+      //if(this.#settings.battleRoyaleSubtractedPoints > 0){
+      if(true){
         subtractedBRPoints = this.#settings.battleRoyaleSubtractedPoints *  (brCounter - 1)
       }
     }
-    var score = calculateScore(distance, this.mapScale! ,await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance)
+    
+    let numberofGamesInRoundFromRoundId = this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!)
+    console.log("numberofGamesInRoundFromRoundId", numberofGamesInRoundFromRoundId)
+    var score = calculateScore(distance, this.mapScale! ,await getStreakCode(location) === this.#streakCode, this.isClosestInWrongCountryModeActivated, this.waterPlonkMode, await isCoordsInLand(location), this.invertScoring, modifierMinusPointsIfWrongCountry, this.#settings.isBRMode, subtractedBRPoints, this.#settings.allowMinus, this.maxErrorDistance, numberofGamesInRoundFromRoundId, this.#settings.roundMultis, this.randomRoundMultiplier)
     if(this.#db.getNumberOfGamesInRoundFromRoundId(this.#roundId!) !== 1 && this.isGameOfChickenModeActivated){
 
       const didUserWinLastRound = this.#db.didUserWinLastRound(dbUser.id, this.#roundId!, this.invertScoring, this.chickenModeSurvivesWith5k)
@@ -449,12 +504,23 @@ export default class Game {
   closeGuesses() {
     this.guessesOpen = false
   }
+  getModeHelpStartOfRound(): string[] {
+    let modeHelp = this.getModeHelp()
+    
+    // if(this.#settings.showRandomMultisOnlyAtEndOfRound){
+    //   modeHelp = modeHelp.filter((part) => !part.startsWith("Random Multiplier"))
+    // }
+    return modeHelp
+    }
+  getModeHelpEndOfRound(): string[] {
+    return this.getModeHelp()
+  }
 
   getModeHelp(): string[] {
     var parts: string[] = []
     if (this.#settings.invertScoring)
     {
-      parts.push("Inverted scoring")
+      parts.push("Inverted scoring (Antipode)")
     }
 
     if (this.#settings.exclusiveMode)
@@ -480,11 +546,16 @@ export default class Game {
     }
     if(this.#settings.isBRMode){
       parts.push("Battle Royale " + this.#settings.battleRoyaleReguessLimit + " guesses")
+      // if(this.#settings.battleRoyaleSubtractedPoints > 0){
+      //   parts.push("BR -" + this.#settings.battleRoyaleSubtractedPoints + " points per guess")
+      // }
       if(this.#settings.battleRoyaleSubtractedPoints > 0){
         parts.push("BR -" + this.#settings.battleRoyaleSubtractedPoints + " points per guess")
       }
+      if(this.#settings.battleRoyaleSubtractedPoints < 0){
+        parts.push("BR +" + this.#settings.battleRoyaleSubtractedPoints*-1 + " points per guess")
+      }
     }
-
     if(this.#settings.allowMinus){
       parts.push("Points can go negative")
     }
@@ -523,8 +594,30 @@ export default class Game {
       if(this.#settings.countdownMode === "abc"){
         parts.push("ABC-Mode: " + this.#settings.ABCModeLetters.split("").join("").toUpperCase())
       }
+      console.log("####################################################################")
+      console.log(this.#settings)
 
-    }
+      }
+    
+      if(this.#settings.roundMultis == "multiMerchant"){
+        parts.push("Multi-Merchant")
+      }
+      if(this.#settings.roundMultis == "random"){
+        if(this.#settings.showRandomMultisOnlyAtEndOfRound){
+          parts.push("<span style='display:none'>Random Multiplier x" + this.randomRoundMultiplier+"</span>")
+          }
+        else{
+          parts.push("Random Multiplier x" + this.randomRoundMultiplier)
+        }
+      }
+      if(this.#settings.modifierMinusPointsIfWrongCountry !== 0){
+        if(this.#settings.modifierMinusPointsIfWrongCountry > 0){
+          parts.push("Wrong country -"+this.#settings.modifierMinusPointsIfWrongCountry + " points")
+        }
+        if(this.#settings.modifierMinusPointsIfWrongCountry < 0){
+          parts.push("Wrong country +" + this.#settings.modifierMinusPointsIfWrongCountry*-1 + " points")
+        }
+      }
     return parts
   }
 

@@ -70,7 +70,7 @@
               <input v-model="settings.showGuessesAreOpen" type="checkbox" />
             </label>
             <label class="form__group" data-tip="Show Guesses are closed.">
-              <i>Show Guesses are closed</i>
+              <i>Show Guesses are closed.</i>
               <input v-model="settings.showGuessesAreClosed" type="checkbox" />
             </label>
             <label class="form__group" data-tip="Show Round has started.">
@@ -215,10 +215,38 @@
       class="form__group"
       data-tip="Allow Minus Points"
     >
-      Allow Minus Points (on BR Subtract Points)
-      <input v-model="settings.allowMinus" type="checkbox" />
-    </label>
+        Allow Minus Points (on BR Subtract Points)
+        <input v-model="settings.allowMinus" type="checkbox" />
+      </label>
 
+        
+      <div>
+        <h2>Multis Settings</h2>
+        <label class="form__group" data-tip="Off">
+          Off
+          <input type="radio" v-model="settings.roundMultis" value="off" />
+        </label>
+        <label class="form__group" data-tip="Multi Merchant">
+          Multi Merchant
+          <input type="radio" v-model="settings.roundMultis" value="multiMerchant" />
+        </label>
+        <label class="form__group" data-tip="Random">
+          Random
+          <input type="radio" v-model="settings.roundMultis" value="random" />
+        </label>
+        </div>
+        <!-- checkbox for only showing the randomMultis on end of the round if roundMultis is enabled-->
+        <label
+        v-show="settings.roundMultis === 'random'"
+          :class="{ 'form__group__disabled' : settings.roundMultis !== 'random'}"
+          class="form__group"
+          data-tip="Only show random multis at end of round"
+        >
+          Only show random multis at end of round
+          <input v-model="settings.showRandomMultisOnlyAtEndOfRound" type="checkbox" />
+        </label>
+
+  
     <hr />
     <h2>Game of Chicken Settings</h2>
 

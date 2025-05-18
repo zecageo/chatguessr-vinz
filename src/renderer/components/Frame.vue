@@ -132,6 +132,7 @@ const modeHelp = shallowRef<string[]>([])
 const guessMarkersLimit = shallowRef<number | null>(null)
 const currentLocation = shallowRef<LatLng | null>(null)
 const gameResultLocations = shallowRef<Location_[] | null>(null)
+
 var MWStreetViewInstance
 
 
@@ -220,11 +221,27 @@ watch(
   { immediate: true }
 )
 
+
+
+async function showRandomMultiMessageInScoreboard(){
+  await chatguessrApi.getSettings().then((settings) => {
+    if(settings.showRandomMultisOnlyAtEndOfRound)
+      document.querySelector('.scoreboard')?.querySelectorAll("span").forEach((el) => {
+        if (el.innerText.includes("Random Multi")) {
+          el.style.display = "block"
+        }
+      })
+  })
+}
+
 onBeforeUnmount(
-  chatguessrApi.onGameStarted((_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
+  chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
+    
+
     isMultiGuess.value = _isMultiGuess
     isBRMode.value = _isBRMode
     console.log("isBRMode", isBRMode.value)
+    
     modeHelp.value = _modeHelp
     gameState.value = 'in-round'
     
@@ -247,6 +264,14 @@ onBeforeUnmount(
     }
     sendPano()
   })
+)
+
+onBeforeUnmount(
+  chatguessrApi.onRoundStarted(async(_modeHelp) => {
+    gameState.value = 'in-round'
+    modeHelp.value = _modeHelp
+    }
+  )
 )
 
 // send pano to backend
@@ -274,7 +299,10 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
 }
 
 onBeforeUnmount(
-  chatguessrApi.onStartRound(() => {
+  chatguessrApi.onStartRound(async() => {
+        // console.log all settings
+        
+
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
     scoreboard.value!.onStartRound()
@@ -282,10 +310,12 @@ onBeforeUnmount(
   })
 )
 onBeforeUnmount(
-  chatguessrApi.onRefreshRound((location) => {
+  chatguessrApi.onRefreshRound(async(location) => {
+
     // this condition prevents gameState to switch to 'in-round' if 'onRefreshRound' is triggered (happens sometimes) on round results screen
     // this is because of "did-frame-finish-load" based logic, ideally we would want something else
     if (gameState.value !== 'round-results') gameState.value = 'in-round'
+    //console.log(settings, "settings")
     currentLocation.value = location
     if (satelliteMode.value.enabled) {
       rendererApi.showSatelliteMap(location)
@@ -533,7 +563,11 @@ onBeforeUnmount(
 )
 
 onBeforeUnmount(
-  chatguessrApi.onShowRoundResults((round, location, roundResults, _guessMarkersLimit) => {
+  chatguessrApi.onShowRoundResults(async (round, location, roundResults, _guessMarkersLimit) => {
+
+    
+        // console.log all settings
+    showRandomMultiMessageInScoreboard()
     gameState.value = 'round-results'
     guessMarkersLimit.value = _guessMarkersLimit
 
@@ -783,4 +817,6 @@ function useSocketConnectionState() {
   border: none;
   z-index: 2;
 }
+
+
 </style>

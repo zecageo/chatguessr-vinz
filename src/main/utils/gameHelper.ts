@@ -129,50 +129,84 @@ export function haversineDistance(mk1: LatLng, mk2: LatLng): number {
  * Returns score based on distance and scale
  */
 
-function modifyScore(score: number, modifier: number, allowMinus: boolean): number {
+function modifyScore(score: number, modifier: number, allowMinus: boolean, roundNumber?:number, roundMultis?:string, randomRoundMultiplier?:number): number {
+
+  var multiModifier = 1
+  if (roundMultis == "multiMerchant"){
+    switch (roundNumber){
+      case 1:
+        multiModifier = 1
+        break
+      case 2:
+        multiModifier = 1.5
+        break
+      case 3:
+        multiModifier = 2
+        break
+      case 4:
+        multiModifier = 2.5
+        break
+      case 5:
+        multiModifier = 3
+        break
+    }
+    score = score * multiModifier
+  }
+  if (roundMultis == "random"){
+    if (randomRoundMultiplier == undefined){
+      console.log("Random multiplier is undefined")
+      return score
+    }
+    score = score * randomRoundMultiplier
+  }
   score = score + modifier 
+  score = Math.round(score)
   if (score < 0 && !allowMinus) score = 0
+
+  console.log("score: " + score + " modifier: " + modifier + " allowMinus: " + allowMinus + " roundNumber: " + roundNumber + " roundMultis: " + roundMultis + " randomRoundMultiplier: " + randomRoundMultiplier)
   return score
 }
 
-export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean, modifierMinusPointsIfWrongCountry: number, isBRMode: boolean, battleRoyaleSubtractedPoints: number, allowMinus: boolean,  maxErrorDistance?:number): number {
-  
+export function calculateScore(distance: number, scale: number, isCorrectCountry: boolean, isClosestInWrongCountryModeActivated: boolean,  waterPlonkMode: string, isPlonkOnLand: boolean, invertScores: boolean, modifierMinusPointsIfWrongCountry: number, isBRMode: boolean, battleRoyaleSubtractedPoints: number, allowMinus: boolean,  maxErrorDistance?:number, roundNumber?:number, roundMultis?:string, randomRoundMultiplier?:number): number {
+  let modifier = 0
+  if (!isCorrectCountry) modifier = - modifierMinusPointsIfWrongCountry
+  if(isBRMode && true)// battleRoyaleSubtractedPoints > 0)
+    modifier = modifier - battleRoyaleSubtractedPoints
+
   if (!maxErrorDistance) {
     const score = 5000 * Math.pow(0.99866017, (distance * 1000) / scale)
-    return Math.round(score)
+
+    return modifyScore(score, modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
   }
   const score = Math.round(5000 * Math.exp(-10 * ((distance * 1000) / maxErrorDistance)))
   
-  let modifier = 0
-  if (!isCorrectCountry) modifier = - modifierMinusPointsIfWrongCountry
-  if(isBRMode && battleRoyaleSubtractedPoints > 0)
-    modifier = modifier - battleRoyaleSubtractedPoints
+
   if (isCorrectCountry && isClosestInWrongCountryModeActivated) return 0
   if (waterPlonkMode == "illegal" && !isPlonkOnLand) return 0
   if (waterPlonkMode == "mandatory" && isPlonkOnLand) return 0
   if (!invertScores){
-    return modifyScore(score ,modifier, allowMinus)
+    return modifyScore(score ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
   }
   else{
     if (distance > 15000){
-      return modifyScore(4999 - Math.round(Math.round(19869 - distance)*0.2052) ,modifier, allowMinus)
+      return modifyScore(4999 - Math.round(Math.round(19869 - distance)*0.2052) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
     }
 
     if (distance > 7500){
-      return modifyScore(4000 - Math.round(Math.round(15000  - distance)*0.4) ,modifier, allowMinus)
+      return modifyScore(4000 - Math.round(Math.round(15000  - distance)*0.4) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
     }
 
     if (distance > 5000){
-      return modifyScore(1000 - Math.round(Math.round(7500  - distance)*0.2) ,modifier, allowMinus)
+      return modifyScore(1000 - Math.round(Math.round(7500  - distance)*0.2) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
     }
 
     if (distance > 2500){
-      return modifyScore(500 - Math.round(Math.round(5000  - distance)*0.1) ,modifier, allowMinus)
+      return modifyScore(500 - Math.round(Math.round(5000  - distance)*0.1) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
     }
   }
 
   if (distance > 100){
-    return modifyScore(250 - Math.round(Math.round(2500  - distance)*0.1) ,modifier, allowMinus)
+    return modifyScore(250 - Math.round(Math.round(2500  - distance)*0.1) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
   }
 
   return 0

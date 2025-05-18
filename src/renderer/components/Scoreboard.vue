@@ -71,7 +71,7 @@
           <OceanPlonkIllegal style="width: 24px;"  />
         </template>
         <template v-else>
-          {{ mode }}
+            <span v-html="mode"></span>
         </template>
       </p>
     </div>
@@ -492,6 +492,8 @@ const { pause, resume } = useIntervalFn(
 
 let direction = 0 // 0: down, 1: up
 function scroller() {
+  if (!tBody) return
+
   if (!tBody.value) return
   if (!direction) {
     const arrivedBottom =
@@ -520,6 +522,8 @@ function scroller() {
 
 function scrollToTop() {
   pause()
+  if (!tBody) return
+  if (!tBody.value) return
   if (tBody.value) tBody.value.scrollTop = 0
   if (!settings.autoScroll) return
   setTimeout(() => {

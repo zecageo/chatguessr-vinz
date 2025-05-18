@@ -74,7 +74,9 @@ const defaultSettings = {
   isRandomPlonkOnlyMode: false,
   modifierMinusPointsIfWrongCountry: 0,
   battleRoyaleSubtractedPoints: 0,
-  allowMinus: false
+  allowMinus: false,
+  roundMultis: "off",
+  showRandomMultisOnlyAtEndOfRound: false,
 }
 
 const settings = Object.assign({}, defaultSettings, storedSettings)
