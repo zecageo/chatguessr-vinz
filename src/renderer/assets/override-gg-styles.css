@@ -152,3 +152,7 @@
   background: #7950e5;
   cursor: pointer;
 }
+/* Hide elements whose class starts with "live-players-count_container" */
+[class^="live-players-count_container"] {
+  display: none !important;
+}
