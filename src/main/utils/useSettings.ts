@@ -77,6 +77,7 @@ const defaultSettings = {
   allowMinus: false,
   roundMultis: "off",
   showRandomMultisOnlyAtEndOfRound: false,
+  rotationDuration: 15
 }
 
 const settings = Object.assign({}, defaultSettings, storedSettings)

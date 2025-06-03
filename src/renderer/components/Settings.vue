@@ -169,6 +169,16 @@
                 max="120"
               />
             </label>
+            <label class="form__group" data-tip="Auto rotate 360° duration in s (default: 15)">
+              Auto rotate 360° duration in s ({{ settings.rotationDuration }} sec) :
+              <input
+                v-model.number="settings.rotationDuration"
+                type="range"
+                min="4"
+                step="1"
+                max="120"
+              />
+            </label>
           </div>
         </div>
       </div>

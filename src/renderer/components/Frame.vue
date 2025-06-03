@@ -76,6 +76,15 @@
     >
       <IconStartFlag />
     </button>
+
+    <button
+      class="cg-button"
+      title="Spin 360° Left"
+      :hidden="gameState !== 'in-round'"
+      @click="onSpinLeft360"
+    >
+      <IconRotateRight />
+    </button>
   </div>
 
   <Suspense>
@@ -103,6 +112,7 @@ import Leaderboard from './Leaderboard/Leaderboard.vue'
 import Timer from './Timer.vue'
 
 import IconDice from '@/assets/icons/dice.svg'
+import IconRotateRight from '@/assets/icons/rotate-right.svg'
 import IconGear from '@/assets/icons/gear.svg'
 import IconLeaderboard from '@/assets/icons/leaderboard.svg'
 import IconTimerVisible from '@/assets/icons/timer_visible.svg'
@@ -413,6 +423,7 @@ console.log("after init")
     })
 )
 
+
 onBeforeUnmount(
   
 chatguessrApi.onMoveBackward(()=>{
@@ -606,6 +617,35 @@ function onGameResultRowClick(row: GameResultDisplay) {
 function onClickCenterSatelliteView() {
   if (currentLocation.value) rendererApi.centerSatelliteView(currentLocation.value)
 }
+
+async function onSpinLeft360() {
+  const settings = reactive<Settings>(await chatguessrApi.getSettings())
+
+console.log("onSpinLeft360")
+  // Perform a smooth 360° spin to the left over 2 seconds (2000ms)
+  const pov = MWStreetViewInstance.getPov();
+  const startHeading = pov.heading;
+  const pitch = pov.pitch;
+  const duration = settings.rotationDuration*1000; // ms
+  var steps = 1440;
+  if(settings.rotationDuration > 15){
+    steps = steps * 2
+  }
+  let currentStep = 0;
+  const stepSize = 360 / steps;
+  const interval = duration / steps;
+
+  const spinInterval = setInterval(() => {
+    currentStep++;
+    const newHeading = (startHeading + (stepSize * currentStep) + 360) % 360;
+    MWStreetViewInstance.setPov({ heading: newHeading, pitch });
+    if (currentStep >= steps) {
+    clearInterval(spinInterval);
+    }
+  }, interval);
+  
+}
+
 async function onStreamerRandomplonk() {
   let latlng = await chatguessrApi.getRandomPlonkLatLng()
   let {lat,lng} = {lat: latlng.lat, lng: latlng.lng}
