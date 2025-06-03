@@ -40,19 +40,12 @@
 
     <button
       class="cg-button"
-      title="Show/Hide timer"
-      :hidden="gameState === 'none'"
-      @click="widgetVisibility.timerVisible = !widgetVisibility.timerVisible"
-    >
-      <IconTimerVisible v-if="widgetVisibility.timerVisible" />
-      <IconTimerHidden v-else />
-    </button>
-
-    <button
-      class="cg-button"
       title="Show/Hide Scoreboard"
       :hidden="gameState === 'none'"
-      @click="widgetVisibility.scoreboardAndGgInterfaceVisible = !widgetVisibility.scoreboardAndGgInterfaceVisible"
+      @click="()=>{
+        let newState = !widgetVisibility.scoreboardAndGgInterfaceVisible
+        widgetVisibility.scoreboardAndGgInterfaceVisible = newState; 
+        widgetVisibility.timerVisible = newState;}"
     >
       <IconScoreboardVisible v-if="widgetVisibility.scoreboardAndGgInterfaceVisible" />
       <IconScoreboardHidden v-else />
