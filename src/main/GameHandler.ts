@@ -670,6 +670,9 @@ export default class GameHandler {
       return this.#db.getBannedUsers()
     })
 
+    ipcMain.handle('get-current-location', () => {
+      return this.#game.getLocation()
+    })  
     ipcMain.on('add-banned-user', (_event, username: string) => {
       this.#db.addBannedUser(username)
     })

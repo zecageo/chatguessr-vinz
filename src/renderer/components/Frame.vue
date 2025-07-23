@@ -115,6 +115,7 @@ import IconScoreboardHidden from '@/assets/icons/scoreboard_hidden.svg'
 import IconStartFlag from '@/assets/icons/start_flag.svg'
 
 import { rendererApi } from '../rendererApi'
+import { validateLocaleAndSetLanguage } from 'typescript'
 const { chatguessrApi } = window
 
 
@@ -137,7 +138,7 @@ const currentLocation = shallowRef<LatLng | null>(null)
 const gameResultLocations = shallowRef<Location_[] | null>(null)
 
 var MWStreetViewInstance
-
+let spinInterval: NodeJS.Timeout | null = null
 
 // Make sure game mode is not set to 'challenge'
 setLocalStorage('quickplay-playtype', 'single')
@@ -612,13 +613,35 @@ function onClickCenterSatelliteView() {
 }
 
 async function onSpinLeft360() {
-  const settings = reactive<Settings>(await chatguessrApi.getSettings())
+  // If already spinning, stop the current spin
+  if (spinInterval) {
+    clearInterval(spinInterval);
+    spinInterval = null;
+    return;
+  }
 
-console.log("onSpinLeft360")
+  const settings = reactive<Settings>(await chatguessrApi.getSettings())
+  // get the heading from the backend
+
+  let location_backend = await chatguessrApi.getCurrentLocation()
+  console.log("location_backend", location_backend)
+
+  console.log("onSpinLeft360")
   // Perform a smooth 360° spin to the left over 2 seconds (2000ms)
   const pov = MWStreetViewInstance.getPov();
-  const startHeading = pov.heading;
-  const pitch = pov.pitch;
+  let povstr = JSON.stringify(pov)
+  console.log("pov", povstr)
+  var startHeading = pov.heading;
+  var pitch = pov.pitch;
+
+  var invertRotation = false;
+
+  if(startHeading === location_backend?.heading) {
+    pitch = location_backend.pitch;
+  }
+  if (pitch > 90 || pitch < -90) {
+    invertRotation = true;
+  }
   const duration = settings.rotationDuration*1000; // ms
   var steps = 1440;
   if(settings.rotationDuration > 15){
@@ -628,12 +651,19 @@ console.log("onSpinLeft360")
   const stepSize = 360 / steps;
   const interval = duration / steps;
 
-  const spinInterval = setInterval(() => {
-    currentStep++;
-    const newHeading = (startHeading + (stepSize * currentStep) + 360) % 360;
+  spinInterval = setInterval(() => {
+    if (invertRotation) {
+      currentStep--;
+    } else {
+      currentStep++;
+    }
+    var newHeading = (startHeading + (stepSize * currentStep) + 360) % 360;
     MWStreetViewInstance.setPov({ heading: newHeading, pitch });
-    if (currentStep >= steps) {
-    clearInterval(spinInterval);
+    if (Math.abs(currentStep) >= steps) {
+      if (spinInterval) {
+        clearInterval(spinInterval);
+        spinInterval = null;
+      }
     }
   }, interval);
   

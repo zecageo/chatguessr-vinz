@@ -15,6 +15,9 @@ export const chatguessrApi = {
     }
   },
 
+  getCurrentLocation(): Promise<Location_> {
+    return ipcRenderer.invoke('get-current-location')
+  },
   startNextRound() {
     ipcRenderer.send('next-round-click')
   },
