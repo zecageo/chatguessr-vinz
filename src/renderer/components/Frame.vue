@@ -304,8 +304,6 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
 onBeforeUnmount(
   chatguessrApi.onStartRound(async() => {
         // console.log all settings
-        
-
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
     scoreboard.value!.onStartRound()
@@ -318,6 +316,7 @@ onBeforeUnmount(
 
     // Auto-rotate at start if enabled
     const settings = await chatguessrApi.getSettings()
+    // set spinInterval to null
     if (settings.autorotateAtStart) {
       setTimeout(() => {
         console.log("!!!!!!!!!!!!!!!")
@@ -583,7 +582,11 @@ onBeforeUnmount(
 onBeforeUnmount(
   chatguessrApi.onShowRoundResults(async (round, location, roundResults, _guessMarkersLimit) => {
 
-    
+    // Stop spinning when round ends
+    if (spinInterval) {
+      clearInterval(spinInterval);
+      spinInterval = null;
+    }
         // console.log all settings
     showRandomMultiMessageInScoreboard()
     gameState.value = 'round-results'
