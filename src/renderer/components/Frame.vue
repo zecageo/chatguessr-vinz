@@ -78,6 +78,15 @@
     >
       <IconRotateRight />
     </button>
+    
+    <button
+      class="cg-button"
+      title="unblink"
+      :hidden="!blinkMode.value.enabled || gameState !== 'in-round'"
+      @click="onClickUnblink"
+    >
+      <IconEyeShut />
+    </button>
   </div>
 
   <Suspense>
@@ -113,11 +122,9 @@ import IconLeaderboard from '@/assets/icons/leaderboard.svg'
 import IconScoreboardVisible from '@/assets/icons/scoreboard_visible.svg'
 import IconScoreboardHidden from '@/assets/icons/scoreboard_hidden.svg'
 import IconStartFlag from '@/assets/icons/start_flag.svg'
-
+import IconEyeShut from '@/assets/icons/eye_shut.svg'
 import { rendererApi } from '../rendererApi'
 const { chatguessrApi } = window
-
-
 
 // probably not necessary
 // defineOptions({
@@ -171,11 +178,14 @@ const gameStatusRemover = useStyleTag('[class^="game_status"], [class^="game_gue
 
 
 const satelliteMode = {
-  // Manual implementation of `ref()` API
-  // As `useLocalStorage` does not receive storage events from the non-vue UI script
-  // TODO(@ReAnnannanna): Replace this with `useLocalStorage` when the pregame UI script is using Vue
   get value(): { enabled: boolean } {
     return getLocalStorage('cg_satelliteMode__settings', { enabled: false })
+  }
+}
+
+const blinkMode = {
+  get value(): { enabled: boolean } {
+    return getLocalStorage('cg_blinkMode__settings', { enabled: false })
   }
 }
 
@@ -627,6 +637,20 @@ function onGameResultRowClick(row: GameResultDisplay) {
 function onClickCenterSatelliteView() {
   if (currentLocation.value) rendererApi.centerSatelliteView(currentLocation.value)
 }
+function onClickUnblink() {
+  if (blinkMode.value.enabled) {
+    const mapRoot = document.querySelector('[data-qa=panorama]') as HTMLElement
+    if (mapRoot) {
+      // Toggle brightness between 0% and 100%
+      const current = mapRoot.style.filter;
+      if (current === 'brightness(0%)') {
+        mapRoot.style.filter = 'brightness(100%)';
+      } else {
+        mapRoot.style.filter = 'brightness(0%)';
+      }
+    }
+  }
+}
 
 async function onSpinLeft360() {
   // If already spinning, stop the current spin
@@ -739,57 +763,57 @@ function useTwitchConnectionState() {
 
 
     function overrideOnLoad(googleScript, observer, overrider) {
-	const oldOnload = googleScript.onload
-	googleScript.onload = (event) => {
-			const google = window.google
-			if (google) {
-					observer.disconnect()
-					overrider(google)
-			}
-			if (oldOnload) {
-					oldOnload.call(googleScript, event)
-			}
-	}
+  const oldOnload = googleScript.onload
+  googleScript.onload = (event) => {
+      const google = window.google
+      if (google) {
+          observer.disconnect()
+          overrider(google)
+      }
+      if (oldOnload) {
+          oldOnload.call(googleScript, event)
+      }
+  }
 }
  
 function grabGoogleScript(mutations) {
-	for (const mutation of mutations) {
-			for (const newNode of mutation.addedNodes) {
-					const asScript = newNode
-					if (asScript && asScript.src && asScript.src.startsWith('https://maps.googleapis.com/')) {
-							return asScript
-					}
-			}
-	}
-	return null
+  for (const mutation of mutations) {
+      for (const newNode of mutation.addedNodes) {
+          const asScript = newNode
+          if (asScript && asScript.src && asScript.src.startsWith('https://maps.googleapis.com/')) {
+              return asScript
+          }
+      }
+  }
+  return null
 }
  
 function injecter(overrider) {
-	if (document.documentElement)
-	{
-			injecterCallback(overrider);
-	}
+  if (document.documentElement)
+  {
+      injecterCallback(overrider);
+  }
 }
  
 function injecterCallback(overrider)
 {
-	new MutationObserver((mutations, observer) => {
-			const googleScript = grabGoogleScript(mutations)
-			if (googleScript) {
-					overrideOnLoad(googleScript, observer, overrider)
-			}
-	}).observe(document.documentElement, { childList: true, subtree: true })
+  new MutationObserver((mutations, observer) => {
+      const googleScript = grabGoogleScript(mutations)
+      if (googleScript) {
+          overrideOnLoad(googleScript, observer, overrider)
+      }
+  }).observe(document.documentElement, { childList: true, subtree: true })
 }
  
 
-	injecter(() => {
-		google.maps.StreetViewPanorama = class extends google.maps.StreetViewPanorama {
+  injecter(() => {
+    google.maps.StreetViewPanorama = class extends google.maps.StreetViewPanorama {
       constructor(...args: any[]) {
           super(...args as [any, ...any[]]);
-					MWStreetViewInstance = this;
-			}
-		}
-	});
+          MWStreetViewInstance = this;
+      }
+    }
+  });
 
 console.log(MWStreetViewInstance, "MWStreetViewInstance")
 
