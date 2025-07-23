@@ -408,9 +408,12 @@
       </div>
     </div>
 
-
-  
-
+    <hr />
+    <div class="flex items-center flex-col gap-05 mt-1">
+      <button class="btn bg-warning" @click="resetModeSettings()">
+        Reset Mode Settings to Default
+      </button>
+    </div>
 
   </div>
 
@@ -716,6 +719,29 @@ function modifyIsMultiGusssOnBRMode(event) {
 
   if(event.target.checked)
     settings.isMultiGuess = false
+}
+
+const resetModeSettings = () => {
+  // Reset all mode settings to their default values
+  settings.isClosestInWrongCountryModeActivated = false
+  settings.invertScoring = false
+  settings.exclusiveMode = false
+  settings.allowMinus = false
+  settings.roundMultis = "off"
+  settings.showRandomMultisOnlyAtEndOfRound = false
+  settings.isGameOfChickenModeActivated = false
+  settings.chickenModeSurvivesWith5k = false
+  settings.chickenMode5kGivesPoints = false
+  settings.isDartsMode = false
+  settings.isDartsModeBust = false
+  settings.dartsTargetScore = 25000
+  settings.isBRMode = false
+  settings.battleRoyaleReguessLimit = 3
+  settings.battleRoyaleSubtractedPoints = 0
+  settings.countdownMode = "normal"
+  settings.ABCModeLetters = "ABCDE"
+  settings.waterPlonkMode = "normal"
+  settings.modifierMinusPointsIfWrongCountry = 0
 }
 
 </script>
