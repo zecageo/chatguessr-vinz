@@ -32,6 +32,13 @@
           Only Randomplonks
           <input v-model="settings.isRandomPlonkOnlyMode" type="checkbox" />
         </label>
+        <label
+          class="form__group"
+          data-tip="Start Rotation on Start of Round"
+        >
+          Auto rotate on Start of Round
+          <input v-model="settings.autorotateAtStart" type="checkbox" />
+        </label>
       </div>
       <hr />
 

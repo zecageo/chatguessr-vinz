@@ -115,7 +115,6 @@ import IconScoreboardHidden from '@/assets/icons/scoreboard_hidden.svg'
 import IconStartFlag from '@/assets/icons/start_flag.svg'
 
 import { rendererApi } from '../rendererApi'
-import { validateLocaleAndSetLanguage } from 'typescript'
 const { chatguessrApi } = window
 
 
@@ -310,7 +309,21 @@ onBeforeUnmount(
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
     scoreboard.value!.onStartRound()
-    sendPano()
+    try{
+      sendPano()
+    }catch(e){
+      console.error(e)
+    }
+            console.log("111111")
+
+    // Auto-rotate at start if enabled
+    const settings = await chatguessrApi.getSettings()
+    if (settings.autorotateAtStart) {
+      setTimeout(() => {
+        console.log("!!!!!!!!!!!!!!!")
+        onSpinLeft360()
+      }, 1000)
+    }
   })
 )
 onBeforeUnmount(
