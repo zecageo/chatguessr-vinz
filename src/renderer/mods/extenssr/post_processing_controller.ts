@@ -23,6 +23,7 @@ const mutuallyExclusiveShaderToggles = [
 	'min',
 	'motion_blur',
 	'scramble',
+	'rescramble',
 	'water'
 ] as const;
 const regularShaderToggles = ['bloom', 'toon', 'snow', 'sobel', 'vignette'] as const;
@@ -99,7 +100,17 @@ const effects: Record<ShaderToggleTypes, Effect> = {
 			});
 		}
 	},
-	snow: {
+	rescramble: {
+		shaderPass: ShaderPass.fromString(scrambleString) as ShaderPass,
+		updateKnownUniforms: (state, knownUniforms) => {
+			knownUniforms.set('scrambled', {
+				name: 'scrambled',
+				type: UniformType.INTVEC,
+				value: state.scrambleState.slice(),
+				vecSize: 16
+			});
+		}
+	},	snow: {
 		shaderPass: ShaderPass.fromString(snowString) as ShaderPass
 	},
 	sobel: {
@@ -138,6 +149,7 @@ export function defaultPP(): PostProcessingState {
 		min: false,
 		motion_blur: false,
 		scramble: false,
+		rescramble: false,
 		scrambleState: shuffleArray([...Array(16).keys()]),
 		snow: false,
 		sobel: false,
@@ -149,10 +161,12 @@ export default class PostProcessingController {
 	state: PostProcessingState;
 	handler: PostprocessHandler | null;
 	streetView: google.maps.StreetViewPanorama | null;
+	scrambleTimer: number | null;
 	constructor() {
 		this.state = defaultPP();
 		this.handler = null;
 		this.streetView = null;
+		this.scrambleTimer = null;
 	}
 	setHandler(handler: PostprocessHandler) {
 		this.handler = handler;
@@ -208,8 +222,36 @@ export default class PostProcessingController {
 	}
 	updateState(newState: PostProcessingState) {
 		this.fixupStateBeforeSet(newState);
+		const rescrambleWasEnabled = this.state.rescramble;
 		this.state = Object.assign(this.state, newState);
 		this.passShaderInfoAndUniforms();
+
+		// Handle scramble timer
+		if (rescrambleWasEnabled) {
+			// Start timer
+			this.startScrambleTimer();
+		} else{
+			// Stop timer
+			this.stopScrambleTimer();
+		}
+	}
+
+	startScrambleTimer() {
+		if (this.scrambleTimer !== null) return;
+		this.scrambleTimer = window.setInterval(() => {
+			if (this.state.rescramble) {
+				this.rescramble();
+			} else {
+				this.stopScrambleTimer();
+			}
+		}, 1000);
+	}
+
+	stopScrambleTimer() {
+		if (this.scrambleTimer !== null) {
+			clearInterval(this.scrambleTimer);
+			this.scrambleTimer = null;
+		}
 	}
 	passShaderInfoAndUniforms() {
 		let shaderInfo = this.assemblePasses() as ShaderInfo;
