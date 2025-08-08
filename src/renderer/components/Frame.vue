@@ -275,6 +275,8 @@ onBeforeUnmount(
         scoreboard.value!.restoreGuesses(restoredGuesses as RoundResult[])
       }
     }
+    rotationFunction()
+
     sendPano()
   })
 )
@@ -310,6 +312,27 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
   if(!closestLink) return false
   return closestLink.panoId
 }
+let isRotationFunctionRunning = false;
+
+async function rotationFunction() {
+  if (isRotationFunctionRunning) return; // Prevent concurrent execution
+  isRotationFunctionRunning = true;
+
+  try {
+    const settings = await chatguessrApi.getSettings()
+
+    if (settings.autorotateAtStart) {
+      setTimeout(() => {
+        console.log("!!!!!!!!!!!!!!!")
+        onSpinLeft360()
+      }, 1000)
+    }
+  } catch (error) {
+    console.error("Error in rotationFunction:", error)
+  } finally {
+    isRotationFunctionRunning = false // Reset the flag
+  }
+}
 
 onBeforeUnmount(
   chatguessrApi.onStartRound(async() => {
@@ -322,17 +345,7 @@ onBeforeUnmount(
     }catch(e){
       console.error(e)
     }
-            console.log("111111")
-
-    // Auto-rotate at start if enabled
-    const settings = await chatguessrApi.getSettings()
-    // set spinInterval to null
-    if (settings.autorotateAtStart) {
-      setTimeout(() => {
-        console.log("!!!!!!!!!!!!!!!")
-        onSpinLeft360()
-      }, 1000)
-    }
+    rotationFunction()
   })
 )
 onBeforeUnmount(
@@ -346,6 +359,8 @@ onBeforeUnmount(
     if (satelliteMode.value.enabled) {
       rendererApi.showSatelliteMap(location)
     }
+    rotationFunction()
+
   })
 )
 declare global {
@@ -653,6 +668,7 @@ function onClickUnblink() {
 }
 
 async function onSpinLeft360() {
+  console.log("onSpinLeft360 called")
   // If already spinning, stop the current spin
   if (spinInterval) {
     clearInterval(spinInterval);
@@ -682,8 +698,8 @@ async function onSpinLeft360() {
   if (pitch > 90 || pitch < -90) {
     invertRotation = true;
   }
-  const duration = settings.rotationDuration*1000; // ms
-  var steps = 1440;
+  const duration = settings.rotationDuration * 1000; // ms
+  var steps = duration / (1000 / 60); // Calculate steps for 60fps
   if(settings.rotationDuration > 15){
     steps = steps * 2
   }
