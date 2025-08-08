@@ -12,6 +12,7 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
     pixelate: false,
     pixelScale: 120,
     greyscale: false,
+    upsidedown: false,
     sepia: false,
     toon: false,
     toonScale:7,
@@ -80,6 +81,17 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
       compassRemover.remove()
     }
   }
+  window.toggleUpsidedown = (el) => {
+    settings.upsidedown = el.checked
+    setLocalStorage('cg_ncnc__settings', settings)
+    if (el.checked) {
+      document.body.style.transform = 'rotate(180deg)'
+      document.body.style.transformOrigin = 'center center'
+    } else {
+      document.body.style.transform = 'none'
+    }
+  }
+
   window.toggleGreyscale = (el) => {
     settings.greyscale = el.checked
     // if greyscale is enabled, remove sepia
@@ -176,9 +188,10 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
         <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Sepia</span>
         <input type="checkbox" id="enableSepia" onclick="toggleSepia(this)" class="toggle_toggle__qfXpL">
         </div>
+        
         <div style="display: flex; align-items: center;">
-        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Pixelate</span>
-        <input type="checkbox" id="enablePixelateMode" onclick="togglePixelateMode(this)" class="toggle_toggle__qfXpL">
+        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Upsidedown</span>
+        <input type="checkbox" id="enableUpsidedown" onclick="toggleUpsidedown(this)" class="toggle_toggle__qfXpL">
         </div>
       </div>
       <div style="display: flex; justify-content: space-between">
@@ -199,6 +212,11 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
         <div style="display: flex; align-items: center;">
         <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Scramble</span>
         <input type="checkbox" id="enableScrambleMode" onclick="toggleScrambleMode(this)" class="toggle_toggle__qfXpL">
+        </div>
+        
+        <div style="display: flex; align-items: center;">
+        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Pixelate</span>
+        <input type="checkbox" id="enablePixelateMode" onclick="togglePixelateMode(this)" class="toggle_toggle__qfXpL">
         </div>
       </div>
 
