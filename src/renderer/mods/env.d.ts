@@ -7,6 +7,7 @@ interface Window {
   toggleWaterMode: (el: HTMLInputElement) => void
   toggleScrambleMode: (el: HTMLInputElement) => void
   toggleRescrambleMode: (el: HTMLInputElement) => void
+  setRescrambleTime: (value: number) => void
   togglePixelateMode: (el: HTMLInputElement) => void
   toggleBlinkMode: (el: HTMLInputElement) => void
   changeBlinkTime: (el: HTMLInputElement) => void

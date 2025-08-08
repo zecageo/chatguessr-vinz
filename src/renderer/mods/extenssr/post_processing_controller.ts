@@ -222,18 +222,21 @@ export default class PostProcessingController {
 	}
 	updateState(newState: PostProcessingState) {
 		this.fixupStateBeforeSet(newState);
-		const rescrambleWasEnabled = this.state.rescramble;
-		this.state = Object.assign(this.state, newState);
-		this.passShaderInfoAndUniforms();
+		// get rescrambleWasEnabled directly from the ui element
+		
+		const rescrambleElement = document.querySelector('#enableRescrambleMode') as HTMLInputElement;
 
-		// Handle scramble timer
-		if (rescrambleWasEnabled) {
+		if (rescrambleElement.checked) {
 			// Start timer
 			this.startScrambleTimer();
 		} else{
 			// Stop timer
 			this.stopScrambleTimer();
 		}
+		this.state = Object.assign(this.state, newState);
+		this.passShaderInfoAndUniforms();
+
+
 	}
 
 	startScrambleTimer() {
