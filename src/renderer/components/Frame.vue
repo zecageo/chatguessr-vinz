@@ -312,14 +312,8 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
   if(!closestLink) return false
   return closestLink.panoId
 }
-let isRotationFunctionRunning = false;
-
-async function rotationFunction() {
-  if (isRotationFunctionRunning) return; // Prevent concurrent execution
-  isRotationFunctionRunning = true;
-
-  try {
-    const settings = await chatguessrApi.getSettings()
+async function rotationFunction(){
+      const settings = await chatguessrApi.getSettings()
 
     if (settings.autorotateAtStart) {
       setTimeout(() => {
@@ -327,11 +321,6 @@ async function rotationFunction() {
         onSpinLeft360()
       }, 1000)
     }
-  } catch (error) {
-    console.error("Error in rotationFunction:", error)
-  } finally {
-    isRotationFunctionRunning = false // Reset the flag
-  }
 }
 
 onBeforeUnmount(
@@ -359,8 +348,7 @@ onBeforeUnmount(
     if (satelliteMode.value.enabled) {
       rendererApi.showSatelliteMap(location)
     }
-    rotationFunction()
-
+    
   })
 )
 declare global {
@@ -698,8 +686,8 @@ async function onSpinLeft360() {
   if (pitch > 90 || pitch < -90) {
     invertRotation = true;
   }
-  const duration = settings.rotationDuration * 1000; // ms
-  var steps = duration / (1000 / 60); // Calculate steps for 60fps
+  const duration = settings.rotationDuration*1000; // ms
+  var steps = 1440;
   if(settings.rotationDuration > 15){
     steps = steps * 2
   }
