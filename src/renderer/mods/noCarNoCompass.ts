@@ -12,6 +12,7 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
     pixelate: false,
     pixelScale: 120,
     greyscale: false,
+    sepia: false,
     toon: false,
     toonScale:7,
     crt: false,
@@ -81,9 +82,28 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
   }
   window.toggleGreyscale = (el) => {
     settings.greyscale = el.checked
+    // if greyscale is enabled, remove sepia
+    if (settings.sepia) {
+      settings.sepia = false
+      document.getElementById('enableSepia').checked = false
+    }
     setLocalStorage('cg_ncnc__settings', settings)
     if (el.checked) {
       document.body.style.filter = 'grayscale(100%)'
+    } else {
+      document.body.style.filter = 'none'
+    }
+  }
+  window.toggleSepia = (el) => {
+    settings.sepia = el.checked
+    // if sepia is enabled, remove greyscale
+    if (settings.greyscale) {
+      settings.greyscale = false
+      document.getElementById('enableGreyscale').checked = false
+    }
+    setLocalStorage('cg_ncnc__settings', settings)
+    if (el.checked) {
+      document.body.style.filter = 'sepia(90%)'
     } else {
       document.body.style.filter = 'none'
     }
@@ -153,8 +173,8 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
         <input type="checkbox" id="enableGreyscale" onclick="toggleGreyscale(this)" class="toggle_toggle__qfXpL">
         </div>
         <div style="display: flex; align-items: center;">
-        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Scramble</span>
-        <input type="checkbox" id="enableScrambleMode" onclick="toggleScrambleMode(this)" class="toggle_toggle__qfXpL">
+        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Sepia</span>
+        <input type="checkbox" id="enableSepia" onclick="toggleSepia(this)" class="toggle_toggle__qfXpL">
         </div>
         <div style="display: flex; align-items: center;">
         <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Pixelate</span>
@@ -175,6 +195,13 @@ import { getLocalStorage, setLocalStorage } from '../useLocalStorage'
         <input type="checkbox" id="enableToonMode" onclick="toggleToonMode(this)" class="toggle_toggle__qfXpL">
         </div>
       </div>
+      <div style="display: flex; justify-content: space-between">
+        <div style="display: flex; align-items: center;">
+        <span class="game-options_optionLabel__Vk5xN" style="margin: 0; padding-right: 6px;">Scramble</span>
+        <input type="checkbox" id="enableScrambleMode" onclick="toggleScrambleMode(this)" class="toggle_toggle__qfXpL">
+        </div>
+      </div>
+
       ${
         settings.scramble
         ? `<div style="display: flex; justify-content: space-between">
