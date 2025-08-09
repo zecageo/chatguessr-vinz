@@ -52,6 +52,8 @@ export default class GameHandler {
   #russianHitmans: UserData[] = []
 
   #moveCommandTimeKeeper: { [key: string]: number } = {}
+
+  #lastRoundSeed: string | undefined
   
   TMPZ: boolean
 
@@ -483,7 +485,7 @@ export default class GameHandler {
         if (!this.#backend) return
 
         this.#game
-          .start(url, settings.isMultiGuess)
+          .start(url, settings.isMultiGuess, this.#battleRoyaleCounter)
           .then(() => {
             const restoredGuesses = this.#game.isMultiGuess
               ? this.#game.getRoundParticipants()
@@ -493,7 +495,7 @@ export default class GameHandler {
               'game-started',
               this.#game.isMultiGuess,
               settings.isBRMode,
-              this.#game.getModeHelp(),
+              this.#game.getModeHelpStartOfRound(),
               restoredGuesses,
               this.#game.getLocation()
             )
@@ -532,7 +534,22 @@ export default class GameHandler {
     })
 
     this.#win.webContents.on('did-frame-finish-load', () => {
-      if (!this.#game.isInGame) return
+      if (!this.#game.isInGame){
+        return
+        }
+        else{
+          let current_seed = this.#game.getRoundId()
+          console.log("current_seed: ", current_seed)
+          if(current_seed && current_seed !== this.#lastRoundSeed){
+            this.#lastRoundSeed = current_seed
+              
+            console.log("############ in game")
+            this.#win.webContents.send(
+              'round-started',
+              this.#game.getModeHelpStartOfRound(),
+            )
+          }
+        } 
 
       this.#win.webContents.executeJavaScript(`
           window.nextRoundBtn = document.querySelector('[data-qa="close-round-result"]');
@@ -594,7 +611,7 @@ export default class GameHandler {
       this.#pay2WinUsers = []
     }
 
-      this.#game.refreshSeed(callbackFunctions).then((roundResults) => {
+      this.#game.refreshSeed(callbackFunctions, this.#battleRoyaleCounter).then((roundResults) => {
         if (roundResults && roundResults.location) {
           this.#showRoundResults(roundResults.location, roundResults.roundResults)
         }
@@ -657,6 +674,9 @@ export default class GameHandler {
       return this.#db.getBannedUsers()
     })
 
+    ipcMain.handle('get-current-location', () => {
+      return this.#game.getLocation()
+    })  
     ipcMain.on('add-banned-user', (_event, username: string) => {
       this.#db.addBannedUser(username)
     })
@@ -933,13 +953,19 @@ export default class GameHandler {
     if (settings.exclusiveMode)
       returnString += `Exclusive Mode: on | `
     if (settings.isBRMode)
-      returnString += `Allowed Guesses in total: ${settings.battleRoyaleReguessLimit} | `
+      returnString += `Allowed Guesses in total: ${settings.battleRoyaleReguessLimit}${(settings.battleRoyaleSubtractedPoints!=0)?", "+(settings.battleRoyaleSubtractedPoints*-1)+" per Plonk":"" } | `
     if (settings.waterPlonkMode === "mandatory")
       returnString += `oceanPlonk: mandatory | `
     if (settings.waterPlonkMode === "illegal")
       returnString += `oceanPlonk: illegal | `
     if (settings.invertScoring)
-      returnString += `invertScoring: on | `
+      returnString += `Antipode: on | `
+    if (settings.roundMultis == "random")
+      returnString += `Random Multiplier: on | `
+    if (settings.roundMultis == "multiMerchant")
+      returnString += `Multi Merchant: on | `
+    if (settings.allowMinus)
+      returnString += `Minus Points allowed: on | `
     if (settings.isGameOfChickenModeActivated){
       returnString += `gameOfChicken: on | `
       if (settings.chickenMode5kGivesPoints){
@@ -967,6 +993,8 @@ export default class GameHandler {
       returnString += `dartsMode: ${settings.dartsTargetScore} ${settings.isDartsModeBust?"bust":""} | `
     if (returnString === "")
       returnString = "No special modes activated"
+    if (settings.modifierMinusPointsIfWrongCountry && settings.modifierMinusPointsIfWrongCountry !== 0)
+      returnString += `Wrong Country: ${settings.modifierMinusPointsIfWrongCountry*-1} Points| `
     return returnString[returnString.length-2] === "|" ? returnString.slice(0, -2) : returnString
   }
 
@@ -1334,9 +1362,7 @@ export default class GameHandler {
     console.log("message: ", message)
     if(message.startsWith(settings.randomPlonkCmd) || message.substring(0,3) == "!rp" || message.substring(0,3) == "!рп" || message.substring(0,6) == "dududu"){
       
-      
-      if(userstate.username === "temp_rsix" || userstate.username === "twitchsmurf_rl")
-        return
+
       if (!this.#game.isInGame) return
 
     if(message.indexOf(" ") >= 0){
@@ -1398,8 +1424,6 @@ export default class GameHandler {
     
     // move commands
     if(this.#game && this.#game.seed && this.TMPZ){
-      if(userstate.username === "temp_rsix" || userstate.username === "twitchsmurf_rl")
-        return
       if(!this.#game.seed.forbidMoving){
         if(userstate && userstate.username){
           if(!this.#moveCommandTimeKeeper[userstate.username]){
@@ -1493,7 +1517,8 @@ export default class GameHandler {
 
 
     // streamer commands
-    if (process.env.NODE_ENV !== 'development' || userstate.badges?.broadcaster !== '1') return
+    //if (process.env.NODE_ENV !== 'development' || userstate.badges?.broadcaster !== '1') return
+    return
 
     if (message.startsWith('!spamguess')) {
       const max = parseInt(message.split(' ')[1] ?? '50', 10)

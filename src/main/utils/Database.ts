@@ -617,6 +617,36 @@ class db {
     })) as Player[]
   }
 
+  // updateGuessesToBR(roundId: string, brCounter: Record<string, number>, subtractedPoints: number, allowMinusPoints: boolean) {
+
+  //   console.log("updateGuessesToBR", roundId, brCounter, subtractedPoints)
+  //   // example values: 81deadf7-111e-4d8c-8c65-5a99df63be5a { '269244141': 1, '1128490111': 1, '1226669482': 1 } 500
+  //   // for every user in brCounter, update their score by the value * subtractedPoints
+    
+  //   const stmt = this.#db.prepare(`
+  //     UPDATE guesses
+  //     SET score = score - :subtractedUserPoints
+  //     WHERE round_id = :roundId
+  //       AND user_id = :userId
+  //   `)
+
+  //   const stmtWithLimit = this.#db.prepare(`
+  //     UPDATE guesses
+  //     SET score = MAX(score - :subtractedUserPoints, 0)
+  //     WHERE round_id = :roundId
+  //       AND user_id = :userId
+  //   `)
+
+  //   Object.keys(brCounter).forEach((userId) => {
+  //     let subtractedUserPoints = (brCounter[userId] - 1) * subtractedPoints
+  //     if (allowMinusPoints) {
+  //       stmt.run({ subtractedUserPoints, roundId, userId })
+  //     } else {
+  //       stmtWithLimit.run({ subtractedUserPoints, roundId, userId })
+  //     }
+  //   })
+  // }
+
   updateGuessesToExclusive(roundId: string) {
     // update the scores to 0 for all guesses where the guesses.country is not unique in the round
     const stmt = this.#db.prepare(`

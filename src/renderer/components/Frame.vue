@@ -40,19 +40,12 @@
 
     <button
       class="cg-button"
-      title="Show/Hide timer"
-      :hidden="gameState === 'none'"
-      @click="widgetVisibility.timerVisible = !widgetVisibility.timerVisible"
-    >
-      <IconTimerVisible v-if="widgetVisibility.timerVisible" />
-      <IconTimerHidden v-else />
-    </button>
-
-    <button
-      class="cg-button"
       title="Show/Hide Scoreboard"
       :hidden="gameState === 'none'"
-      @click="widgetVisibility.scoreboardAndGgInterfaceVisible = !widgetVisibility.scoreboardAndGgInterfaceVisible"
+      @click="()=>{
+        let newState = !widgetVisibility.scoreboardAndGgInterfaceVisible
+        widgetVisibility.scoreboardAndGgInterfaceVisible = newState; 
+        widgetVisibility.timerVisible = newState;}"
     >
       <IconScoreboardVisible v-if="widgetVisibility.scoreboardAndGgInterfaceVisible" />
       <IconScoreboardHidden v-else />
@@ -76,6 +69,24 @@
       @click="onClickCenterSatelliteView"
     >
       <IconStartFlag />
+    </button>
+
+    <button
+      class="cg-button"
+      title="Spin 360° Left"
+      :hidden="gameState !== 'in-round'"
+      @click="onSpinLeft360"
+    >
+      <IconRotateRight />
+    </button>
+    
+    <button
+      class="cg-button"
+      title="unblink"
+      :hidden="!blinkMode.value.enabled || gameState !== 'in-round'"
+      @click="onClickUnblink"
+    >
+      <IconEyeShut />
     </button>
   </div>
 
@@ -104,18 +115,17 @@ import Leaderboard from './Leaderboard/Leaderboard.vue'
 import Timer from './Timer.vue'
 
 import IconDice from '@/assets/icons/dice.svg'
+import IconRotateRight from '@/assets/icons/rotate-right.svg'
 import IconGear from '@/assets/icons/gear.svg'
 import IconLeaderboard from '@/assets/icons/leaderboard.svg'
-import IconTimerVisible from '@/assets/icons/timer_visible.svg'
+//import IconTimerVisible from '@/assets/icons/timer_visible.svg'
+//import IconTimerHidden from '@/assets/icons/timer_hidden.svg'
 import IconScoreboardVisible from '@/assets/icons/scoreboard_visible.svg'
 import IconScoreboardHidden from '@/assets/icons/scoreboard_hidden.svg'
-import IconTimerHidden from '@/assets/icons/timer_hidden.svg'
 import IconStartFlag from '@/assets/icons/start_flag.svg'
-
+import IconEyeShut from '@/assets/icons/eye_shut.svg'
 import { rendererApi } from '../rendererApi'
 const { chatguessrApi } = window
-
-
 
 // probably not necessary
 // defineOptions({
@@ -137,6 +147,8 @@ const gameResultLocations = shallowRef<Location_[] | null>(null)
 
 var MWStreetViewInstance
 
+var MWStreetViewInstance
+let spinInterval: NodeJS.Timeout | null = null
 
 // Make sure game mode is not set to 'challenge'
 setLocalStorage('quickplay-playtype', 'single')
@@ -170,11 +182,14 @@ const gameStatusRemover = useStyleTag('[class^="game_status"], [class^="game_gue
 
 
 const satelliteMode = {
-  // Manual implementation of `ref()` API
-  // As `useLocalStorage` does not receive storage events from the non-vue UI script
-  // TODO(@ReAnnannanna): Replace this with `useLocalStorage` when the pregame UI script is using Vue
   get value(): { enabled: boolean } {
     return getLocalStorage('cg_satelliteMode__settings', { enabled: false })
+  }
+}
+
+const blinkMode = {
+  get value(): { enabled: boolean } {
+    return getLocalStorage('cg_blinkMode__settings', { enabled: false })
   }
 }
 
@@ -249,11 +264,27 @@ newGameObserver.observe(document.body, { childList: true, subtree: true });
 
 
 
+
+
+async function showRandomMultiMessageInScoreboard(){
+  await chatguessrApi.getSettings().then((settings) => {
+    if(settings.showRandomMultisOnlyAtEndOfRound)
+      document.querySelector('.scoreboard')?.querySelectorAll("span").forEach((el) => {
+        if (el.innerText.includes("Random Multi")) {
+          el.style.display = "block"
+        }
+      })
+  })
+}
+
 onBeforeUnmount(
-  chatguessrApi.onGameStarted((_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
+  chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
+    
+
     isMultiGuess.value = _isMultiGuess
     isBRMode.value = _isBRMode
     console.log("isBRMode", isBRMode.value)
+    
     modeHelp.value = _modeHelp
     gameState.value = 'in-round'
     
@@ -274,8 +305,18 @@ onBeforeUnmount(
         scoreboard.value!.restoreGuesses(restoredGuesses as RoundResult[])
       }
     }
+    rotationFunction()
+
     sendPano()
   })
+)
+
+onBeforeUnmount(
+  chatguessrApi.onRoundStarted(async(_modeHelp) => {
+    gameState.value = 'in-round'
+    modeHelp.value = _modeHelp
+    }
+  )
 )
 
 // send pano to backend
@@ -301,24 +342,43 @@ function getClosestHeadingPano(currentHeading: number, streetViewInstance): stri
   if(!closestLink) return false
   return closestLink.panoId
 }
+async function rotationFunction(){
+      const settings = await chatguessrApi.getSettings()
+
+    if (settings.autorotateAtStart) {
+      setTimeout(() => {
+        console.log("!!!!!!!!!!!!!!!")
+        onSpinLeft360()
+      }, 1000)
+    }
+}
 
 onBeforeUnmount(
-  chatguessrApi.onStartRound(() => {
+  chatguessrApi.onStartRound(async() => {
+        // console.log all settings
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
     scoreboard.value!.onStartRound()
-    sendPano()
+    try{
+      sendPano()
+    }catch(e){
+      console.error(e)
+    }
+    rotationFunction()
   })
 )
 onBeforeUnmount(
-  chatguessrApi.onRefreshRound((location) => {
+  chatguessrApi.onRefreshRound(async(location) => {
+
     // this condition prevents gameState to switch to 'in-round' if 'onRefreshRound' is triggered (happens sometimes) on round results screen
     // this is because of "did-frame-finish-load" based logic, ideally we would want something else
     if (gameState.value !== 'round-results') gameState.value = 'in-round'
+    //console.log(settings, "settings")
     currentLocation.value = location
     if (satelliteMode.value.enabled) {
       rendererApi.showSatelliteMap(location)
     }
+    
   })
 )
 declare global {
@@ -411,6 +471,7 @@ console.log("after init")
 
     })
 )
+
 
 onBeforeUnmount(
   
@@ -562,7 +623,15 @@ onBeforeUnmount(
 )
 
 onBeforeUnmount(
-  chatguessrApi.onShowRoundResults((round, location, roundResults, _guessMarkersLimit) => {
+  chatguessrApi.onShowRoundResults(async (round, location, roundResults, _guessMarkersLimit) => {
+
+    // Stop spinning when round ends
+    if (spinInterval) {
+      clearInterval(spinInterval);
+      spinInterval = null;
+    }
+        // console.log all settings
+    showRandomMultiMessageInScoreboard()
     gameState.value = 'round-results'
     guessMarkersLimit.value = _guessMarkersLimit
 
@@ -601,6 +670,79 @@ function onGameResultRowClick(row: GameResultDisplay) {
 function onClickCenterSatelliteView() {
   if (currentLocation.value) rendererApi.centerSatelliteView(currentLocation.value)
 }
+function onClickUnblink() {
+  if (blinkMode.value.enabled) {
+    const mapRoot = document.querySelector('[data-qa=panorama]') as HTMLElement
+    if (mapRoot) {
+      // Toggle brightness between 0% and 100%
+      const current = mapRoot.style.filter;
+      if (current === 'brightness(0%)') {
+        mapRoot.style.filter = 'brightness(100%)';
+      } else {
+        mapRoot.style.filter = 'brightness(0%)';
+      }
+    }
+  }
+}
+
+async function onSpinLeft360() {
+  console.log("onSpinLeft360 called")
+  // If already spinning, stop the current spin
+  if (spinInterval) {
+    clearInterval(spinInterval);
+    spinInterval = null;
+    return;
+  }
+
+  const settings = reactive<Settings>(await chatguessrApi.getSettings())
+  // get the heading from the backend
+
+  let location_backend = await chatguessrApi.getCurrentLocation()
+  console.log("location_backend", location_backend)
+
+  console.log("onSpinLeft360")
+  // Perform a smooth 360° spin to the left over 2 seconds (2000ms)
+  const pov = MWStreetViewInstance.getPov();
+  let povstr = JSON.stringify(pov)
+  console.log("pov", povstr)
+  var startHeading = pov.heading;
+  var pitch = pov.pitch;
+
+  var invertRotation = false;
+
+  if(startHeading === location_backend?.heading) {
+    pitch = location_backend.pitch;
+  }
+  if (pitch > 90 || pitch < -90) {
+    invertRotation = true;
+  }
+  const duration = settings.rotationDuration*1000; // ms
+  var steps = 1440;
+  if(settings.rotationDuration > 15){
+    steps = steps * 2
+  }
+  let currentStep = 0;
+  const stepSize = 360 / steps;
+  const interval = duration / steps;
+
+  spinInterval = setInterval(() => {
+    if (invertRotation) {
+      currentStep--;
+    } else {
+      currentStep++;
+    }
+    var newHeading = (startHeading + (stepSize * currentStep) + 360) % 360;
+    MWStreetViewInstance.setPov({ heading: newHeading, pitch });
+    if (Math.abs(currentStep) >= steps) {
+      if (spinInterval) {
+        clearInterval(spinInterval);
+        spinInterval = null;
+      }
+    }
+  }, interval);
+  
+}
+
 async function onStreamerRandomplonk() {
   let latlng = await chatguessrApi.getRandomPlonkLatLng()
   let {lat,lng} = {lat: latlng.lat, lng: latlng.lng}
@@ -655,57 +797,57 @@ function useTwitchConnectionState() {
 
 
     function overrideOnLoad(googleScript, observer, overrider) {
-	const oldOnload = googleScript.onload
-	googleScript.onload = (event) => {
-			const google = window.google
-			if (google) {
-					observer.disconnect()
-					overrider(google)
-			}
-			if (oldOnload) {
-					oldOnload.call(googleScript, event)
-			}
-	}
+  const oldOnload = googleScript.onload
+  googleScript.onload = (event) => {
+      const google = window.google
+      if (google) {
+          observer.disconnect()
+          overrider(google)
+      }
+      if (oldOnload) {
+          oldOnload.call(googleScript, event)
+      }
+  }
 }
  
 function grabGoogleScript(mutations) {
-	for (const mutation of mutations) {
-			for (const newNode of mutation.addedNodes) {
-					const asScript = newNode
-					if (asScript && asScript.src && asScript.src.startsWith('https://maps.googleapis.com/')) {
-							return asScript
-					}
-			}
-	}
-	return null
+  for (const mutation of mutations) {
+      for (const newNode of mutation.addedNodes) {
+          const asScript = newNode
+          if (asScript && asScript.src && asScript.src.startsWith('https://maps.googleapis.com/')) {
+              return asScript
+          }
+      }
+  }
+  return null
 }
  
 function injecter(overrider) {
-	if (document.documentElement)
-	{
-			injecterCallback(overrider);
-	}
+  if (document.documentElement)
+  {
+      injecterCallback(overrider);
+  }
 }
  
 function injecterCallback(overrider)
 {
-	new MutationObserver((mutations, observer) => {
-			const googleScript = grabGoogleScript(mutations)
-			if (googleScript) {
-					overrideOnLoad(googleScript, observer, overrider)
-			}
-	}).observe(document.documentElement, { childList: true, subtree: true })
+  new MutationObserver((mutations, observer) => {
+      const googleScript = grabGoogleScript(mutations)
+      if (googleScript) {
+          overrideOnLoad(googleScript, observer, overrider)
+      }
+  }).observe(document.documentElement, { childList: true, subtree: true })
 }
  
 
-	injecter(() => {
-		google.maps.StreetViewPanorama = class extends google.maps.StreetViewPanorama {
+  injecter(() => {
+    google.maps.StreetViewPanorama = class extends google.maps.StreetViewPanorama {
       constructor(...args: any[]) {
           super(...args as [any, ...any[]]);
-					MWStreetViewInstance = this;
-			}
-		}
-	});
+          MWStreetViewInstance = this;
+      }
+    }
+  });
 
 console.log(MWStreetViewInstance, "MWStreetViewInstance")
 
@@ -812,4 +954,6 @@ function useSocketConnectionState() {
   border: none;
   z-index: 2;
 }
+
+
 </style>

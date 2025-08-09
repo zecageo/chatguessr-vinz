@@ -32,6 +32,13 @@
           Only Randomplonks
           <input v-model="settings.isRandomPlonkOnlyMode" type="checkbox" />
         </label>
+        <label
+          class="form__group"
+          data-tip="Start Rotation on Start of Round"
+        >
+          Auto rotate on Start of Round
+          <input v-model="settings.autorotateAtStart" type="checkbox" />
+        </label>
       </div>
       <hr />
 
@@ -70,7 +77,7 @@
               <input v-model="settings.showGuessesAreOpen" type="checkbox" />
             </label>
             <label class="form__group" data-tip="Show Guesses are closed.">
-              <i>Show Guesses are closed</i>
+              <i>Show Guesses are closed.</i>
               <input v-model="settings.showGuessesAreClosed" type="checkbox" />
             </label>
             <label class="form__group" data-tip="Show Round has started.">
@@ -169,6 +176,16 @@
                 max="120"
               />
             </label>
+            <label class="form__group" data-tip="Auto rotate 360° duration in s (default: 15)">
+              Auto rotate 360° duration in s ({{ settings.rotationDuration }} sec) :
+              <input
+                v-model.number="settings.rotationDuration"
+                type="range"
+                min="4"
+                step="1"
+                max="120"
+              />
+            </label>
           </div>
         </div>
       </div>
@@ -188,17 +205,17 @@
   <div class="ml-05">
     <label
       class="form__group"
-      data-tip="Closest in wrong country mode"
+      data-tip="Wrong country mode"
     >
-      Closest in wrong country mode
+      Wrong country mode
       <input v-model="settings.isClosestInWrongCountryModeActivated" type="checkbox" />
     </label>
     
     <label
         class="form__group"
-        data-tip="Invert scoring (furthest plonk wins)"
+        data-tip="Antipode Mode (only normal scoring World Maps)"
       >
-      Invert scoring (furthest plonk wins)
+      Antipode Mode (only normal scoring World Maps)
         <input v-model="settings.invertScoring" type="checkbox" />
       </label>
 
@@ -210,6 +227,42 @@
     Exclusive mode
       <input v-model="settings.exclusiveMode" type="checkbox" />
     </label>
+      
+    <label
+      class="form__group"
+      data-tip="Allow Minus Points"
+    >
+        Allow Minus Points (on BR Subtract Points)
+        <input v-model="settings.allowMinus" type="checkbox" />
+      </label>
+
+        
+      <div>
+        <h2>Multis Settings</h2>
+        <label class="form__group" data-tip="Off">
+          Off
+          <input type="radio" v-model="settings.roundMultis" value="off" />
+        </label>
+        <label class="form__group" data-tip="Multi Merchant">
+          Multi Merchant
+          <input type="radio" v-model="settings.roundMultis" value="multiMerchant" />
+        </label>
+        <label class="form__group" data-tip="Random">
+          Random
+          <input type="radio" v-model="settings.roundMultis" value="random" />
+        </label>
+        </div>
+        <!-- checkbox for only showing the randomMultis on end of the round if roundMultis is enabled-->
+        <label
+        v-show="settings.roundMultis === 'random'"
+          :class="{ 'form__group__disabled' : settings.roundMultis !== 'random'}"
+          class="form__group"
+          data-tip="Only show random multis at end of round"
+        >
+          Only show random multis at end of round
+          <input v-model="settings.showRandomMultisOnlyAtEndOfRound" type="checkbox" />
+        </label>
+
   
     <hr />
     <h2>Game of Chicken Settings</h2>
@@ -287,6 +340,15 @@
       <input v-model.trim="settings.battleRoyaleReguessLimit" type="text" spellcheck="false" :disabled="!settings.isBRMode"/>
     </label>
 
+
+    <label 
+      class="form__group"
+      :class="{ 'form__group__disabled' : settings.isBRMode === false}" 
+      data-tip="Subtrated Points per Guess">
+      Number of Points subtracted per Guess:
+      <input v-model.trim="settings.battleRoyaleSubtractedPoints" type="text" spellcheck="false" :disabled="!settings.isBRMode"/>
+    </label>
+
     <hr />
     <div class="grid-col">
       <div>
@@ -346,9 +408,12 @@
       </div>
     </div>
 
-
-  
-
+    <hr />
+    <div class="flex items-center flex-col gap-05 mt-1">
+      <button class="btn bg-warning" @click="resetModeSettings()">
+        Reset Mode Settings to Default
+      </button>
+    </div>
 
   </div>
 
@@ -654,6 +719,29 @@ function modifyIsMultiGusssOnBRMode(event) {
 
   if(event.target.checked)
     settings.isMultiGuess = false
+}
+
+const resetModeSettings = () => {
+  // Reset all mode settings to their default values
+  settings.isClosestInWrongCountryModeActivated = false
+  settings.invertScoring = false
+  settings.exclusiveMode = false
+  settings.allowMinus = false
+  settings.roundMultis = "off"
+  settings.showRandomMultisOnlyAtEndOfRound = false
+  settings.isGameOfChickenModeActivated = false
+  settings.chickenModeSurvivesWith5k = false
+  settings.chickenMode5kGivesPoints = false
+  settings.isDartsMode = false
+  settings.isDartsModeBust = false
+  settings.dartsTargetScore = 25000
+  settings.isBRMode = false
+  settings.battleRoyaleReguessLimit = 3
+  settings.battleRoyaleSubtractedPoints = 0
+  settings.countdownMode = "normal"
+  settings.ABCModeLetters = "ABCDE"
+  settings.waterPlonkMode = "normal"
+  settings.modifierMinusPointsIfWrongCountry = 0
 }
 
 </script>

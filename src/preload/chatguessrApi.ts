@@ -15,6 +15,9 @@ export const chatguessrApi = {
     }
   },
 
+  getCurrentLocation(): Promise<Location_> {
+    return ipcRenderer.invoke('get-current-location')
+  },
   startNextRound() {
     ipcRenderer.send('next-round-click')
   },
@@ -75,7 +78,13 @@ export const chatguessrApi = {
   ) {
     return ipcRendererOn('game-started', callback)
   },
-
+  onRoundStarted(
+    callback: (
+      modeHelp: string[],
+    ) => void
+  ) {
+    return ipcRendererOn('round-started', callback)
+  },
   onGameQuit(callback: () => void) {
     return ipcRendererOn('game-quitted', callback)
   },

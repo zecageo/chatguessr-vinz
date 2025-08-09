@@ -71,7 +71,7 @@
           <OceanPlonkIllegal style="width: 24px;"  />
         </template>
         <template v-else>
-          {{ mode }}
+            <span v-html="mode"></span>
         </template>
       </p>
     </div>
@@ -102,7 +102,11 @@
         </thead>
         <tbody>
           <TransitionGroup name="scoreboard_rows">
-<tr v-for="row in rows" :key="row.player.username" @click="onRowClick(row)" :title="row.disqualifiedMessage ? row.disqualifiedMessage : ''">
+<tr v-for="(row, i) in rows" :key="row.player.username"
+    @mouseenter="highlightGuessMarkerByIndex(i)"
+    @mouseleave="resetGuessMarkerZIndexes()"
+    @click="onRowClick(row)"
+    :title="row.disqualifiedMessage ? row.disqualifiedMessage : ''">
               <td v-for="col in activeCols" :key="col.value">
                 <div
                   v-if="col.value === 'player'"
@@ -492,6 +496,8 @@ const { pause, resume } = useIntervalFn(
 
 let direction = 0 // 0: down, 1: up
 function scroller() {
+  if (!tBody) return
+
   if (!tBody.value) return
   if (!direction) {
     const arrivedBottom =
@@ -520,6 +526,8 @@ function scroller() {
 
 function scrollToTop() {
   pause()
+  if (!tBody) return
+  if (!tBody.value) return
   if (tBody.value) tBody.value.scrollTop = 0
   if (!settings.autoScroll) return
   setTimeout(() => {
@@ -543,6 +551,31 @@ function setSwitchState(state: boolean) {
 
 function toMeter(distance: number) {
   return distance >= 1 ? distance.toFixed(1) + 'km' : Math.floor(distance * 1000) + 'm'
+}
+
+function highlightGuessMarkerByIndex(index: number) {
+  // Find all guess markers
+  console.log('highlightGuessMarkerByIndex', index);
+  const markers = document.querySelectorAll('.custom-guess-marker');
+  var markerParents: (HTMLElement | null | undefined)[] = []
+  markers.forEach((el) => {
+    const parent = (el as HTMLElement)?.parentElement?.parentElement;
+    markerParents.push(parent);
+  });
+  markerParents.forEach((el, i) => {
+    if (i === index) {
+      (el as HTMLElement).style.zIndex = '9999';
+    } else {
+      (el as HTMLElement).style.zIndex = '';
+    }
+  });
+}
+
+function resetGuessMarkerZIndexes() {
+  const markers = document.querySelectorAll('.custom-guess-marker');
+  markers.forEach((el) => {
+    (el as HTMLElement).style.zIndex = '';
+  });
 }
 
 defineExpose({
