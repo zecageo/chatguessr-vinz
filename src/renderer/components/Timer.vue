@@ -426,10 +426,14 @@ const autoRandomPlonkAtEndOfRound = () => {
   if (settings.isAutomated) {
     document.getElementById("streamerRandomplonkButton")?.click()
   }
+    let timer = settings.timeToShowRoundAndGameResults * 1000;
+    if (timer < 3000) {
+        timer = 4000;
+    }
     setTimeout(() => {
         
       clickNextRoundButtonIfExists()
-    }, settings.timeToShowRoundAndGameResults * 1000)
+    }, timer)
 }
 const clickNextRoundButtonIfExists = () => {
   let nextRoundButtonButton = document.querySelector("[data-qa^='close-round-result']") as HTMLButtonElement;
@@ -456,7 +460,7 @@ const autoStartNextGameFunction = ()=>{
 
     }
 
-  }, settings.timeToShowRoundAndGameResults * 1000)
+  }, timer)
 }
 
 const reset = () => {
