@@ -226,13 +226,14 @@ export default class PostProcessingController {
 		
 		const rescrambleElement = document.querySelector('#enableRescrambleMode') as HTMLInputElement;
 
-		if (rescrambleElement.checked) {
+		if (rescrambleElement?.checked) {
 			// Start timer
 			this.startScrambleTimer();
 		} else{
 			// Stop timer
 			this.stopScrambleTimer();
 		}
+		console.log("newstate", newState)
 		this.state = Object.assign(this.state, newState);
 		this.passShaderInfoAndUniforms();
 
