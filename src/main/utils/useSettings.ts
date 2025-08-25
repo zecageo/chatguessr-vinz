@@ -67,6 +67,7 @@ const defaultSettings = {
   includeBroadcasterDataInBest: true,
   isStartOfRoundCommandActive: false,
   startOfRoundCommand: "!botrandomplonk",
+  autoSendLastLoc: false,
   ABCModeLetters: "ABCDE",
   isBRMode: false,
   battleRoyaleReguessLimit: 3,

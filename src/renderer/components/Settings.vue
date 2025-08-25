@@ -535,6 +535,10 @@
         Message at start of Round:
         <input v-model.trim="settings.startOfRoundCommand" type="text" spellcheck="false" />
       </label>
+      <label class="form__group" data-tip="Auto write lastloc at end of round">
+        Auto write lastloc at end of round
+        <input v-model="settings.autoSendLastLoc" type="checkbox" />
+      </label>
 
 
 
