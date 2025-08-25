@@ -189,7 +189,7 @@ export function calculateScore(distance: number, scale: number, isCorrectCountry
   }
   else{
     if (distance > 15000){
-      return modifyScore(4999 - Math.round(Math.round(19869 - distance)*0.2052) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
+      return modifyScore(4999 - Math.round(Math.round(20015.1 - distance)*0.2052) ,modifier, allowMinus, roundNumber, roundMultis, randomRoundMultiplier)
     }
 
     if (distance > 7500){
