@@ -123,7 +123,7 @@ export default class GameHandler {
     this.#win.loadURL(`https://www.geoguessr.com/maps/${mapUrl}`)
   }
 
-  #showRoundResults(location: Location_, roundResults: RoundResult[]) {
+  async #showRoundResults(location: Location_, roundResults: RoundResult[]) {
     const round = this.#game.isFinished ? this.#game.round : this.#game.round - 1
 
 
@@ -175,6 +175,17 @@ export default class GameHandler {
       } ${this.#game.roundPointGift}`,
       { system: false }
     )
+
+    if (settings.autoSendLastLoc) {
+      const last5Locations = this.#db.getLastlocs()
+      if (last5Locations.length > 0) {
+        const lastLocation = last5Locations[0]
+        const url = await makeMapsUrl(lastLocation.location)
+        await this.#backend?.sendMessage(
+            `The last location was on the map "${lastLocation.map_name}" in ${getEmoji(lastLocation.streakCode)} ${lastLocation.streakCode}: ${url}`
+        )
+      }
+    }
 
     this.#battleRoyaleCounter = {}
     this.#streamerDidRandomPlonk = false
