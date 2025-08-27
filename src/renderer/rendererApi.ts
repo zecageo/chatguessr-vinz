@@ -27,6 +27,7 @@ async function drawRoundResults(
   const infoWindow = createInfoWindow()
 
   roundResults.forEach((result, index) => {
+    if (result.player.username === 'BROADCASTER') return
     if (index >= limit) return
 
     const guessMarkerContent = createCustomGuessMarker(result.player.avatar, index)
@@ -66,6 +67,8 @@ async function drawRoundResults(
 }
 
 async function drawPlayerResults(locations: Location_[], result: GameResultDisplay) {
+  if (result.player.username === 'BROADCASTER') return
+
   const { AdvancedMarkerElement } = await loadMarkerLibrary()
 
   const map = globalMap

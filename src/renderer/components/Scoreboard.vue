@@ -51,7 +51,7 @@
           </button>
         </div>
       </div>
-      <div class="scoreboard-title">{{ title }} ({{ rows.length }})</div>
+      <div class="scoreboard-title">{{ title }} ({{ filteredRows.length }})</div>
       <div style="width: 65px">
         <label :class="['switch-container', { hidden: gameState !== 'in-round' }]">
           <input type="checkbox" :checked="switchState" @input="(e) => toggleGuesses(e)" />
@@ -102,7 +102,7 @@
         </thead>
         <tbody>
           <TransitionGroup name="scoreboard_rows">
-<tr v-for="(row, i) in rows" :key="row.player.username"
+<tr v-for="(row, i) in filteredRows" :key="row.player.username"
     @mouseenter="highlightGuessMarkerByIndex(i)"
     @mouseleave="resetGuessMarkerZIndexes()"
     @click="onRowClick(row)"
@@ -277,6 +277,10 @@ const activeCols = computed(() =>
 )
 
 const rows = shallowReactive<ScoreboardRow[]>([])
+
+const filteredRows = computed(() =>
+  rows.filter((row) => row.player.username !== 'BROADCASTER')
+)
 
 function onStartRound() {
   rows.length = 0
