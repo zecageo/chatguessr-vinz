@@ -28,7 +28,7 @@ watch(() => props.isVisible, (isVisible) => {
     const streetViewService = new google.maps.StreetViewService();
     streetViewService.getPanorama({
       location: props.location,
-      radius: 50,
+      radius: 5000,
       source: google.maps.StreetViewSource.OUTDOOR,
     }, (data, status) => {
       if (status === 'OK' && data && data.location && data.location.pano && panorama.value) {
