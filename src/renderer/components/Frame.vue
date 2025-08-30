@@ -102,12 +102,18 @@
   </Suspense>
 
   <Suspense>
-    <ClosestLocation :is-visible="isLocationModalVisible" :location="location" @close="hideLocationModal" />
+    <ClosestLocation
+      :is-visible="isLocationModalVisible"
+      :location="location"
+      :panorama-radius="settings?.panoramaRadius"
+      :panorama-source="settings?.panoramaSource"
+      @close="hideLocationModal"
+    />
   </Suspense>
 </template>
 
 <script lang="ts" setup>
-import { shallowRef, reactive, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { shallowRef, reactive, onMounted, onBeforeUnmount, watch, computed, ref } from 'vue'
 import { useStyleTag } from '@vueuse/core'
 import { getLocalStorage, setLocalStorage } from '@/useLocalStorage'
 
@@ -142,6 +148,7 @@ const settingsVisible = shallowRef(false)
 const leaderboardVisible = shallowRef(false)
 const { isLocationModalVisible, location, showLocationModal, hideLocationModal } = useLocationModal()
 
+const settings = ref<Settings>()
 const gameState = shallowRef<GameState>('none')
 const isMultiGuess = shallowRef<boolean>(false)
 const isBRMode = shallowRef<boolean>(false)
@@ -254,9 +261,10 @@ async function showRandomMultiMessageInScoreboard(){
   })
 }
 
-onMounted(() => {
-  window.showClosestLocationModal = showLocationModal;
-});
+onMounted(async () => {
+  settings.value = await chatguessrApi.getSettings()
+  window.showClosestLocationModal = showLocationModal
+})
 
 onBeforeUnmount(
   chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {

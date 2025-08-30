@@ -42,6 +42,41 @@
       </div>
       <hr />
 
+      <h2>Panorama Settings</h2>
+      <div class="ml-05">
+        <label
+          class="form__group"
+          data-tip="The radius in which to search for a panorama (in meters)"
+        >
+          Panorama search radius ({{ settings.panoramaRadius }}m) :
+          <input
+            v-model.number="settings.panoramaRadius"
+            type="range"
+            min="1"
+            max="250000"
+            step="1"
+          />
+        </label>
+        <div>
+          <label class="form__group" data-tip="The source for panoramas">
+            Panorama source:
+          </label>
+          <label class="form__group" data-tip="Default source">
+            Default
+            <input type="radio" v-model="settings.panoramaSource" value="DEFAULT" />
+          </label>
+          <label class="form__group" data-tip="Google source">
+            Google
+            <input type="radio" v-model="settings.panoramaSource" value="GOOGLE" />
+          </label>
+          <label class="form__group" data-tip="Outdoor source">
+            Outdoor
+            <input type="radio" v-model="settings.panoramaSource" value="OUTDOOR" />
+          </label>
+        </div>
+      </div>
+      <hr />
+
       <h2>Twitch notifications</h2>
       <div class="ml-05">
         <div class="grid-col">

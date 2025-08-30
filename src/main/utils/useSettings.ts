@@ -79,6 +79,8 @@ const defaultSettings = {
   showRandomMultisOnlyAtEndOfRound: false,
   rotationDuration: 15,
   autorotateAtStart: false,
+  panoramaRadius: 5000,
+  panoramaSource: 'GOOGLE',
 }
 
 const settings = Object.assign({}, defaultSettings, storedSettings)

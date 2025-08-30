@@ -15,6 +15,8 @@ import Modal from './ui/Modal.vue';
 const props = defineProps<{
   isVisible: boolean;
   location: LatLng | null;
+  panoramaRadius?: number;
+  panoramaSource?: string;
 }>();
 
 const emit = defineEmits(['close']);
@@ -56,11 +58,23 @@ watch(() => props.isVisible, async (isVisible) => {
     // If there's an existing instance, clean it first so we can recreate safely
     cleanupPanorama();
 
+    const getPanoramaSource = (source?: string): google.maps.StreetViewSource => {
+      switch (source) {
+        case 'DEFAULT':
+          return google.maps.StreetViewSource.DEFAULT;
+        case 'OUTDOOR':
+          return google.maps.StreetViewSource.OUTDOOR;
+        case 'GOOGLE':
+        default:
+          return google.maps.StreetViewSource.GOOGLE;
+      }
+    };
+
     const streetViewService = new google.maps.StreetViewService();
     streetViewService.getPanorama({
       location: props.location,
-      radius: 5000,
-      source: google.maps.StreetViewSource.OUTDOOR,
+      radius: props.panoramaRadius || 5000,
+      source: getPanoramaSource(props.panoramaSource),
     }, (data, status) => {
       if (status === 'OK' && data && data.location && data.location.pano && panorama.value) {
         // create a fresh panorama instance bound to the current container
