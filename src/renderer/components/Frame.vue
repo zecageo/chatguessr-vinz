@@ -353,7 +353,10 @@ onBeforeUnmount(
 
     // this condition prevents gameState to switch to 'in-round' if 'onRefreshRound' is triggered (happens sometimes) on round results screen
     // this is because of "did-frame-finish-load" based logic, ideally we would want something else
-    if (gameState.value !== 'round-results') gameState.value = 'in-round'
+    // Also block while game or round results are visible.
+    if (gameState.value !== 'round-results' && gameState.value !== 'game-results') {
+      gameState.value = 'in-round'
+    }
     //console.log(settings, "settings")
     currentLocation.value = location
     if (satelliteMode.value.enabled) {
