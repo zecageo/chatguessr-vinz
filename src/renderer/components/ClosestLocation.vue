@@ -8,10 +8,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, onUnmounted, nextTick } from 'vue';
 import Modal from './ui/Modal.vue';
-
-import { watch } from 'vue';
 
 const props = defineProps<{
   isVisible: boolean;
@@ -23,8 +21,33 @@ const emit = defineEmits(['close']);
 const panorama = ref<HTMLElement | null>(null);
 const panoramaInstance = ref<google.maps.StreetViewPanorama | null>(null);
 
-watch(() => props.isVisible, (isVisible) => {
+function cleanupPanorama() {
+  if (panoramaInstance.value) {
+    try {
+      // hide and remove listeners from the existing panorama instance
+      panoramaInstance.value.setVisible(false);
+      if ((google as any).maps && (google as any).maps.event && (google as any).maps.event.clearInstanceListeners) {
+        (google as any).maps.event.clearInstanceListeners(panoramaInstance.value);
+      }
+    } catch (e) {
+      // ignore errors from the maps API during cleanup
+    }
+    panoramaInstance.value = null;
+  }
+  if (panorama.value) {
+    panorama.value.innerHTML = '';
+  }
+}
+
+watch(() => props.isVisible, async (isVisible) => {
   if (isVisible && props.location) {
+    // ensure the ref is mounted in the DOM
+    await nextTick();
+    if (!panorama.value) return;
+
+    // If there's an existing instance, clean it first so we can recreate safely
+    cleanupPanorama();
+
     const streetViewService = new google.maps.StreetViewService();
     streetViewService.getPanorama({
       location: props.location,
@@ -32,12 +55,11 @@ watch(() => props.isVisible, (isVisible) => {
       source: google.maps.StreetViewSource.OUTDOOR,
     }, (data, status) => {
       if (status === 'OK' && data && data.location && data.location.pano && panorama.value) {
-        if (!panoramaInstance.value) {
-          panoramaInstance.value = new google.maps.StreetViewPanorama(panorama.value, {
-            addressControl: false,
-            showRoadLabels: false,
-          });
-        }
+        // create a fresh panorama instance bound to the current container
+        panoramaInstance.value = new google.maps.StreetViewPanorama(panorama.value, {
+          addressControl: false,
+          showRoadLabels: false,
+        });
         panoramaInstance.value.setPano(data.location.pano);
         panoramaInstance.value.setVisible(true);
       } else {
@@ -46,7 +68,14 @@ watch(() => props.isVisible, (isVisible) => {
         }
       }
     });
+  } else {
+    // modal was closed or no location: cleanup
+    cleanupPanorama();
   }
+});
+
+onUnmounted(() => {
+  cleanupPanorama();
 });
 </script>
 
