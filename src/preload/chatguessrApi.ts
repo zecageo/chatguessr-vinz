@@ -53,6 +53,10 @@ export const chatguessrApi = {
   deleteBannedUser(username: string) {
     ipcRenderer.send('delete-banned-user', username)
   },
+
+  setPanoramaModalVisible(visible: boolean) {
+    ipcRenderer.send('set-panorama-modal-visible', visible)
+  },
   returnMyLastLoc(url: string, username: string, locationNumber: number): void {
     console.log("locationnumber inside returnMyLastLoc", locationNumber)
     ipcRenderer.send('return-my-last-loc', url, username, locationNumber)

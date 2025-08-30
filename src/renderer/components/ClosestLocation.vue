@@ -12,6 +12,8 @@ import { ref, watch, onUnmounted, nextTick } from 'vue';
 import { useStyleTag } from '@vueuse/core';
 import Modal from './ui/Modal.vue';
 
+const { chatguessrApi } = window
+
 const props = defineProps<{
   isVisible: boolean;
   location: LatLng | null;
@@ -50,6 +52,7 @@ function cleanupPanorama() {
 }
 
 watch(() => props.isVisible, async (isVisible) => {
+  chatguessrApi.setPanoramaModalVisible(isVisible)
   if (isVisible && props.location) {
     // ensure the ref is mounted in the DOM
     await nextTick();

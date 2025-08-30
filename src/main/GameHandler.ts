@@ -54,7 +54,9 @@ export default class GameHandler {
   #moveCommandTimeKeeper: { [key: string]: number } = {}
 
   #lastRoundSeed: string | undefined
-  
+
+  #isPanoramaModalVisible: boolean
+
   TMPZ: boolean
 
   constructor(
@@ -73,6 +75,7 @@ export default class GameHandler {
     this.#disappointedUsers = []
     this.#pay2WinUsers = []
     this.#russianHitmans = []
+    this.#isPanoramaModalVisible = false
     this.TMPZ = false
     this.init()
   }
@@ -476,6 +479,8 @@ export default class GameHandler {
   init() {
     // Browser Listening
     this.#win.webContents.on('did-navigate-in-page', (_event, url) => {
+      if (this.#isPanoramaModalVisible) return
+
       if (isGameURL(url)) {
         // TODO(reanna) warn about the thing not being connected
         if (!this.#backend) return
@@ -529,12 +534,11 @@ export default class GameHandler {
       }
     })
 
-    this.#win.webContents.on('did-frame-finish-load', (_event, isMainFrame) => {
-      if (!isMainFrame) return
-
-      if (!this.#game.isInGame) {
+    this.#win.webContents.on('did-frame-finish-load', () => {
+      if (!this.#game.isInGame){
         return
-      } else {
+        }
+        else{
           let current_seed = this.#game.getRoundId()
           console.log("current_seed: ", current_seed)
           if(current_seed && current_seed !== this.#lastRoundSeed){
@@ -685,6 +689,10 @@ export default class GameHandler {
 
     ipcMain.on('delete-banned-user', (_event, username: string) => {
       this.#db.deleteBannedUser(username)
+    })
+
+    ipcMain.on('set-panorama-modal-visible', (_event, isVisible: boolean) => {
+      this.#isPanoramaModalVisible = isVisible
     })
     ipcMain.on('return-my-last-loc', (_event, url: string, username: string, locationNumber: number) => {
       console.log("inside backend getting the url: ", url)
