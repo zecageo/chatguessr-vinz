@@ -26,8 +26,10 @@ async function drawRoundResults(
 
   const infoWindow = createInfoWindow()
 
-  roundResults.forEach((result, index) => {
-    if (index >= limit) return
+  for (let i = roundResults.length - 1; i >= 0; i--) {
+    const result = roundResults[i]
+    const index = i
+    if (index >= limit) continue
 
     const guessMarkerContent = createCustomGuessMarker(result.player.avatar, index)
     const guessMarker = new AdvancedMarkerElement({
@@ -62,7 +64,7 @@ async function drawRoundResults(
         geodesic: true
       })
     )
-  })
+  }
 }
 
 async function drawPlayerResults(locations: Location_[], result: GameResultDisplay) {
@@ -122,8 +124,9 @@ function createInfoWindow() {
     pixelOffset: new google.maps.Size(0, 10)
   })
 }
-
+ 
 function createCustomGuessMarker(avatar: string | null, index?: number) {
+  console.log("creating custom guess marker with avatar:", avatar, "and index:", index);
   const markerEl = document.createElement('div')
   markerEl.className = 'custom-guess-marker'
 

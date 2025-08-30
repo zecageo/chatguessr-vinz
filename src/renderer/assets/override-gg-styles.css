@@ -156,3 +156,7 @@
 [class^="live-players-count_container"] {
   display: none !important;
 }
+
+[class^="result-layout_"] > [class^="result-overlay-"] {
+  display: none !important;
+}

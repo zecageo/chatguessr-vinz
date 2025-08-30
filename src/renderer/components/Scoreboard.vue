@@ -559,13 +559,17 @@ function highlightGuessMarkerByIndex(index: number) {
   const markers = document.querySelectorAll('.custom-guess-marker');
   var markerParents: (HTMLElement | null | undefined)[] = []
   markers.forEach((el) => {
-    const parent = (el as HTMLElement)?.parentElement?.parentElement;
-    markerParents.push(parent);
+    const parent = (el as HTMLElement)?.closest('[class*="marker-view"]');
+    if (parent) markerParents.push(parent as HTMLElement);
   });
+  // reverse markerParents
+  markerParents.reverse();
   markerParents.forEach((el, i) => {
     if (i === index) {
+      //(el as HTMLElement).style.position = 'relative';
       (el as HTMLElement).style.zIndex = '9999';
     } else {
+      //(el as HTMLElement).style.position = '';
       (el as HTMLElement).style.zIndex = '';
     }
   });
@@ -574,7 +578,11 @@ function highlightGuessMarkerByIndex(index: number) {
 function resetGuessMarkerZIndexes() {
   const markers = document.querySelectorAll('.custom-guess-marker');
   markers.forEach((el) => {
-    (el as HTMLElement).style.zIndex = '';
+    const parent = (el as HTMLElement)?.parentElement?.parentElement;
+    if (parent) {
+      parent.style.position = '';
+      parent.style.zIndex = '';
+    }
   });
 }
 
