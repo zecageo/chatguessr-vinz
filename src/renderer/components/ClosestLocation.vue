@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick } from 'vue';
+import { useStyleTag } from '@vueuse/core';
 import Modal from './ui/Modal.vue';
 
 const props = defineProps<{
@@ -20,6 +21,11 @@ const emit = defineEmits(['close']);
 
 const panorama = ref<HTMLElement | null>(null);
 const panoramaInstance = ref<google.maps.StreetViewPanorama | null>(null);
+// Style tag to temporarily hide guess markers while the panorama modal is showing
+const hideGuessMarkers = useStyleTag('[data-qa="guess-marker"] { display: none !important; }', {
+  id: 'cg-hide-guess-markers-panorama',
+  manual: true
+});
 
 function cleanupPanorama() {
   if (panoramaInstance.value) {
@@ -37,6 +43,8 @@ function cleanupPanorama() {
   if (panorama.value) {
     panorama.value.innerHTML = '';
   }
+  // Restore guess markers visibility when closing / cleaning up
+  hideGuessMarkers.unload();
 }
 
 watch(() => props.isVisible, async (isVisible) => {
@@ -62,10 +70,14 @@ watch(() => props.isVisible, async (isVisible) => {
         });
         panoramaInstance.value.setPano(data.location.pano);
         panoramaInstance.value.setVisible(true);
+  // Hide guess markers once the panorama is successfully displayed
+  hideGuessMarkers.unload();
       } else {
         if (panorama.value) {
           panorama.value.innerHTML = '<p>No Street View found for this location.</p>';
         }
+  // If no panorama, ensure markers remain visible
+  hideGuessMarkers.unload();
       }
     });
   } else {
