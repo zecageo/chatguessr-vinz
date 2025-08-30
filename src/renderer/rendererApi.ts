@@ -52,6 +52,10 @@ async function drawRoundResults(
       infoWindow.close()
     })
 
+    guessMarkerContent.addEventListener('click', () => {
+      window.showClosestLocationModal(result.position)
+    })
+
     guessMarkers.push(guessMarker)
 
     polylines.push(
@@ -97,6 +101,10 @@ async function drawPlayerResults(locations: Location_[], result: GameResultDispl
     })
     guessMarkerContent.addEventListener('mouseout', () => {
       infoWindow.close()
+    })
+
+    guessMarkerContent.addEventListener('click', () => {
+      window.showClosestLocationModal(guess)
     })
     guessMarkers.push(guessMarker)
 

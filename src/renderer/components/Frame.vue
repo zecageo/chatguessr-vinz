@@ -100,6 +100,10 @@
       <Leaderboard />
     </Modal>
   </Suspense>
+
+  <Suspense>
+    <ClosestLocation :is-visible="isLocationModalVisible" :location="location" @close="hideLocationModal" />
+  </Suspense>
 </template>
 
 <script lang="ts" setup>
@@ -112,6 +116,8 @@ import Modal from './ui/Modal.vue'
 import Scoreboard from './Scoreboard.vue'
 import Leaderboard from './Leaderboard/Leaderboard.vue'
 import Timer from './Timer.vue'
+import ClosestLocation from './ClosestLocation.vue'
+import { useLocationModal } from '../useLocationModal'
 
 import IconDice from '@/assets/icons/dice.svg'
 import IconRotateRight from '@/assets/icons/rotate-right.svg'
@@ -134,6 +140,7 @@ const { chatguessrApi } = window
 const scoreboard = shallowRef<InstanceType<typeof Scoreboard> | null>(null)
 const settingsVisible = shallowRef(false)
 const leaderboardVisible = shallowRef(false)
+const { isLocationModalVisible, location, showLocationModal, hideLocationModal } = useLocationModal()
 
 const gameState = shallowRef<GameState>('none')
 const isMultiGuess = shallowRef<boolean>(false)
@@ -247,6 +254,10 @@ async function showRandomMultiMessageInScoreboard(){
   })
 }
 
+onMounted(() => {
+  window.showClosestLocationModal = showLocationModal;
+});
+
 onBeforeUnmount(
   chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
     
@@ -354,6 +365,7 @@ onBeforeUnmount(
 declare global {
   interface Window {
     initialize: () => void;
+    showClosestLocationModal: (loc: LatLng) => void;
   }
 }
 onBeforeUnmount(
