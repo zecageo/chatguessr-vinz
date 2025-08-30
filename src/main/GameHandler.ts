@@ -529,11 +529,12 @@ export default class GameHandler {
       }
     })
 
-    this.#win.webContents.on('did-frame-finish-load', () => {
-      if (!this.#game.isInGame){
+    this.#win.webContents.on('did-frame-finish-load', (_event, isMainFrame) => {
+      if (!isMainFrame) return
+
+      if (!this.#game.isInGame) {
         return
-        }
-        else{
+      } else {
           let current_seed = this.#game.getRoundId()
           console.log("current_seed: ", current_seed)
           if(current_seed && current_seed !== this.#lastRoundSeed){
