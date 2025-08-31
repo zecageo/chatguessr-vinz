@@ -2,7 +2,6 @@
   <Modal :is-visible="isVisible" @close="emit('close')">
     <div class="closest-location-modal">
       <div ref="panorama" class="panorama-container"></div>
-      <button @click="emit('close')" class="close-button">Close</button>
     </div>
   </Modal>
 </template>
