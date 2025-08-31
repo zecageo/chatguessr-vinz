@@ -200,6 +200,13 @@ export const chatguessrApi = {
 
   getCurrentVersion(): Promise<string> {
     return ipcRenderer.invoke('get-current-version')
+  },
+
+  // Temporarily suppress main-process did-frame-finish-load handling to avoid
+  // panorama Street View iframe loads triggering game logic. Duration defaults
+  // to 1500ms if not provided.
+  suppressFrameLoad(durationMs?: number) {
+    ipcRenderer.send('suppress-did-frame-finish-load', durationMs)
   }
 }
 

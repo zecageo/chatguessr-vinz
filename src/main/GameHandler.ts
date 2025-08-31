@@ -54,6 +54,8 @@ export default class GameHandler {
   #moveCommandTimeKeeper: { [key: string]: number } = {}
 
   #lastRoundSeed: string | undefined
+  // Timestamp (ms) until which did-frame-finish-load handling is suppressed
+  #suppressFrameLoadUntil: number = 0
   
   TMPZ: boolean
 
@@ -530,6 +532,8 @@ export default class GameHandler {
     })
 
     this.#win.webContents.on('did-frame-finish-load', () => {
+      // If suppression is active, skip handling. Used when opening panorama modal.
+      if (Date.now() < this.#suppressFrameLoadUntil) return
       if (!this.#game.isInGame){
         return
         }
@@ -673,6 +677,10 @@ export default class GameHandler {
     ipcMain.handle('get-current-location', () => {
       return this.#game.getLocation()
     })  
+    ipcMain.on('suppress-did-frame-finish-load', (_event, durationMs?: number) => {
+      const duration = typeof durationMs === 'number' && durationMs > 0 ? durationMs : 1500
+      this.#suppressFrameLoadUntil = Date.now() + duration
+    })
     ipcMain.on('add-banned-user', (_event, username: string) => {
       this.#db.addBannedUser(username)
     })

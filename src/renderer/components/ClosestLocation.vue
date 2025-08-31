@@ -51,6 +51,12 @@ function cleanupPanorama() {
 
 watch(() => props.isVisible, async (isVisible) => {
   if (isVisible && props.location) {
+    // Suppress did-frame-finish-load side-effects in main process while
+    // injecting Street View panorama (which creates iframes) to avoid
+    // triggering game refresh logic.
+    if (window?.chatguessrApi?.suppressFrameLoad) {
+      window.chatguessrApi.suppressFrameLoad(1500)
+    }
     // ensure the ref is mounted in the DOM
     await nextTick();
     if (!panorama.value) return;
