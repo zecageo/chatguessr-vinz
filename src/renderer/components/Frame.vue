@@ -157,7 +157,8 @@ const guessMarkersLimit = shallowRef<number | null>(null)
 const currentLocation = shallowRef<LatLng | null>(null)
 const gameResultLocations = shallowRef<Location_[] | null>(null)
 
-var MWStreetViewInstance
+// Holds the main in-game StreetView panorama (not temporary modal panoramas)
+var MWStreetViewInstance: google.maps.StreetViewPanorama | undefined
 let spinInterval: NodeJS.Timeout | null = null
 
 // Make sure game mode is not set to 'challenge'
@@ -311,8 +312,14 @@ onBeforeUnmount(
 // send pano to backend
 function sendPano() {
   window.setTimeout(() => {
-    let pano = MWStreetViewInstance.getPano()
-    chatguessrApi.sendPano(pano)
+    try {
+      if (MWStreetViewInstance) {
+        const pano = MWStreetViewInstance.getPano()
+        chatguessrApi.sendPano(pano)
+      }
+    } catch (e) {
+      console.warn('sendPano failed (no main panorama yet)', e)
+    }
   }, 500)
 }
 function getClosestHeadingPano(currentHeading: number, streetViewInstance): string | boolean{
@@ -382,13 +389,15 @@ declare global {
 onBeforeUnmount(
   chatguessrApi.onMoveForward(() => {
     // get latlng of pano in front of us
-    let pov = MWStreetViewInstance.getPov()
-    console.log("initial heading", pov.heading)
-    let pano = getClosestHeadingPano(pov.heading, MWStreetViewInstance)
-    if(!pano) return
-    console.log("closest heading", pano)
-    MWStreetViewInstance.setPano(pano)
-    console.log(MWStreetViewInstance, "MWStreetViewInstance")
+  const sv = MWStreetViewInstance
+  if (!sv) return
+  const pov = sv.getPov()
+  console.log("initial heading", pov.heading)
+  const pano = getClosestHeadingPano(pov.heading, sv)
+  if (!pano || typeof pano !== 'string') return
+  console.log("closest heading", pano)
+  sv.setPano(pano)
+  console.log(sv, "MWStreetViewInstance")
 
 return 0
 
@@ -469,16 +478,19 @@ console.log("after init")
 onBeforeUnmount(
   
 chatguessrApi.onMoveBackward(()=>{
-  let pov = MWStreetViewInstance.getPov()
+  const sv = MWStreetViewInstance
+  if (!sv) return
+  let pov = sv.getPov()
   let heading = (pov.heading + 180) % 360
-  let pano = getClosestHeadingPano(heading, MWStreetViewInstance)
-  if(!pano) return
-  MWStreetViewInstance.setPano(pano)
+  const pano = getClosestHeadingPano(heading, sv)
+  if (!pano || typeof pano !== 'string') return
+  sv.setPano(pano)
   })
 )
 
 onBeforeUnmount(
   chatguessrApi.onPanLeft((degrees) => {
+    if (!MWStreetViewInstance) return
     let pov = MWStreetViewInstance.getPov()
     let heading = pov.heading
     let pitch = pov.pitch
@@ -488,7 +500,8 @@ onBeforeUnmount(
 )
 onBeforeUnmount(
   chatguessrApi.onPanRight((degrees) => {
-    let pov = MWStreetViewInstance.getPov()
+  if (!MWStreetViewInstance) return
+  let pov = MWStreetViewInstance.getPov()
     let heading = pov.heading
     let pitch = pov.pitch
     let newHeading = heading + degrees
@@ -497,7 +510,8 @@ onBeforeUnmount(
 )
 onBeforeUnmount(
   chatguessrApi.onPanUp((degrees) => {
-    let pov = MWStreetViewInstance.getPov()
+  if (!MWStreetViewInstance) return
+  let pov = MWStreetViewInstance.getPov()
     let heading = pov.heading
     let pitch = pov.pitch
     let newPitch = pitch + degrees
@@ -508,7 +522,8 @@ onBeforeUnmount(
 )
 onBeforeUnmount(
   chatguessrApi.onPanDown((degrees) => {
-    let pov = MWStreetViewInstance.getPov()
+  if (!MWStreetViewInstance) return
+  let pov = MWStreetViewInstance.getPov()
     let heading = pov.heading
     let pitch = pov.pitch
     let newPitch = pitch - degrees
@@ -518,14 +533,16 @@ onBeforeUnmount(
 )
 onBeforeUnmount(
   chatguessrApi.onZoomIn((value) => {
-    let zoom = MWStreetViewInstance.getZoom()
+  if (!MWStreetViewInstance) return
+  let zoom = MWStreetViewInstance.getZoom()
     let newZoom = zoom + value
     MWStreetViewInstance.setZoom(newZoom)
   })
 )
 onBeforeUnmount(
   chatguessrApi.onZoomOut((value) => {
-    let zoom = MWStreetViewInstance.getZoom()
+  if (!MWStreetViewInstance) return
+  let zoom = MWStreetViewInstance.getZoom()
     let newZoom = zoom - value
     MWStreetViewInstance.setZoom(newZoom)
   })
@@ -695,6 +712,10 @@ async function onSpinLeft360() {
 
   console.log("onSpinLeft360")
   // Perform a smooth 360° spin to the left over 2 seconds (2000ms)
+  if (!MWStreetViewInstance) {
+    console.warn('Spin requested but main panorama not set yet.')
+    return
+  }
   const pov = MWStreetViewInstance.getPov();
   let povstr = JSON.stringify(pov)
   console.log("pov", povstr)
@@ -725,7 +746,7 @@ async function onSpinLeft360() {
       currentStep++;
     }
     var newHeading = (startHeading + (stepSize * currentStep) + 360) % 360;
-    MWStreetViewInstance.setPov({ heading: newHeading, pitch });
+  if (MWStreetViewInstance) MWStreetViewInstance.setPov({ heading: newHeading, pitch });
     if (Math.abs(currentStep) >= steps) {
       if (spinInterval) {
         clearInterval(spinInterval);
@@ -834,12 +855,22 @@ function injecterCallback(overrider)
  
 
   injecter(() => {
-    google.maps.StreetViewPanorama = class extends google.maps.StreetViewPanorama {
-      constructor(...args: any[]) {
-          super(...args as [any, ...any[]]);
-          MWStreetViewInstance = this;
+    // Wrap the constructor to capture only the main game panorama instance.
+    const OriginalPanorama = google.maps.StreetViewPanorama
+    google.maps.StreetViewPanorama = class extends OriginalPanorama {
+      constructor(container: HTMLElement, ...rest: any[]) {
+        super(container, ...rest)
+        // Heuristic: main game panorama has data-qa="panorama" or its parent does.
+        const isGamePanorama = container?.getAttribute?.('data-qa') === 'panorama' ||
+          !!container?.closest?.('[data-qa="panorama"]')
+        if (!MWStreetViewInstance || isGamePanorama) {
+          MWStreetViewInstance = this
+          // Debug marker
+          ;(MWStreetViewInstance as any)._cgTag = isGamePanorama ? 'game' : 'first'
+        }
       }
-    }
+    } as any
+    ;(google.maps.StreetViewPanorama as any).prototype = OriginalPanorama.prototype
   });
 
 console.log(MWStreetViewInstance, "MWStreetViewInstance")
