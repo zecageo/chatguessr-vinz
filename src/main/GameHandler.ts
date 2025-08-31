@@ -529,12 +529,101 @@ export default class GameHandler {
       }
     })
 
-    ipcMain.on('compass-detected', () => {
-      this.onRoundStarted()
+    this.#win.webContents.on('dom-ready', () => {
+      if (!this.#game.isInGame){
+        return
+        }
+        else{
+          let current_seed = this.#game.getRoundId()
+          console.log("current_seed: ", current_seed)
+          if(current_seed && current_seed !== this.#lastRoundSeed){
+            this.#lastRoundSeed = current_seed
+
+            console.log("############ in game")
+            this.#win.webContents.send(
+              'round-started',
+              this.#game.getModeHelpStartOfRound(),
+            )
+          }
+        }
+
+      this.#win.webContents.executeJavaScript(`
+          window.nextRoundBtn = document.querySelector('[data-qa="close-round-result"]');
+          window.playAgainBtn = document.querySelector('[data-qa="play-again-button"]');
+
+          if (window.nextRoundBtn) {
+              nextRoundBtn.addEventListener("click", () => {
+                  nextRoundBtn.setAttribute('disabled', 'disabled');
+                  chatguessrApi.startNextRound(true);
+              });
+          }
+
+          if (window.playAgainBtn) {
+              playAgainBtn.addEventListener("click", () => {
+                  playAgainBtn.setAttribute('disabled', 'disabled');
+                  chatguessrApi.returnToMapPage();
+              });
+          }
+      `)
+
+      if (this.#game.isFinished) return
+
+      this.#win.webContents.send('refreshed-in-game', this.#game.getLocation())
+      // Checks and update seed when the this.game has refreshed
+      // update the current location if it was skipped
+      // if the streamer has guessed returns scores
+          /// handle rewards
+
+    var callbackFunctions = {
+      disappointed:{
+        callbacks: {},
+      },
+      pay2Win:{
+        callbacks: {},
+      }
+    }
+    if (this.#disappointedUsers.length > 0) {
+      this.#disappointedUsers.forEach(user=>{
+        const coordinatesLat = -50.607101021878165
+        const coordinatesLng = 165.97286224365234
+        if(user.username)
+          callbackFunctions.disappointed.callbacks[user['user-id']] = ()=>{this.#game.handleUserGuess(user, {lat: coordinatesLat, lng: coordinatesLng}, false, true, 0, true)}
+
+      })
+      this.#disappointedUsers = []
+    }
+
+    if (this.#pay2WinUsers.length > 0) {
+      this.#pay2WinUsers.forEach(user=>{
+        // get current round
+        let currentLocation = this.#game.getLocation()
+
+        const coordinatesLat = currentLocation.lat
+        const coordinatesLng = currentLocation.lng
+        if(user.username)
+          callbackFunctions.pay2Win.callbacks[user['user-id']] = ()=>{this.#game.handleUserGuess(user, {lat: coordinatesLat, lng: coordinatesLng}, false, true, 0, true)}
+
+      })
+      this.#pay2WinUsers = []
+    }
+
+      this.#game.refreshSeed(callbackFunctions, this.#battleRoyaleCounter).then((roundResults) => {
+        if (roundResults && roundResults.location) {
+          this.#showRoundResults(roundResults.location, roundResults.roundResults)
+        }
+      })
+      callbackFunctions = {
+        disappointed:{
+          callbacks: {},
+        },
+        pay2Win:{
+          callbacks: {},
+        }
+      }
     })
 
     ipcMain.on('next-round-click', () => {
-      this.nextRound(true)
+      this.nextRound()
     })
 
     ipcMain.on('return-to-map-page', () => {
@@ -907,99 +996,9 @@ export default class GameHandler {
 
   #cgCooldown: boolean = false
   #mapCooldown: boolean = false
-  onRoundStarted() {
-    if (!this.#game.isInGame) {
-      return
-    } else {
-      let current_seed = this.#game.getRoundId()
-      console.log('current_seed: ', current_seed)
-      if (current_seed && current_seed !== this.#lastRoundSeed) {
-        this.#lastRoundSeed = current_seed
-
-        console.log('############ in game')
-        this.#win.webContents.send('round-started', this.#game.getModeHelpStartOfRound())
-      }
-    }
-
-    this.#win.webContents.executeJavaScript(`
-        window.nextRoundBtn = document.querySelector('[data-qa="close-round-result"]');
-        window.playAgainBtn = document.querySelector('[data-qa="play-again-button"]');
-
-        if (window.nextRoundBtn) {
-            nextRoundBtn.addEventListener("click", () => {
-                nextRoundBtn.setAttribute('disabled', 'disabled');
-                chatguessrApi.startNextRound();
-            });
-        }
-
-        if (window.playAgainBtn) {
-            playAgainBtn.addEventListener("click", () => {
-                playAgainBtn.setAttribute('disabled', 'disabled');
-                chatguessrApi.returnToMapPage();
-            });
-        }
-    `)
-
-    if (this.#game.isFinished) return
-
-    this.#win.webContents.send('refreshed-in-game', this.#game.getLocation())
-    // Checks and update seed when the this.game has refreshed
-    // update the current location if it was skipped
-    // if the streamer has guessed returns scores
-    /// handle rewards
-
-    var callbackFunctions = {
-      disappointed: {
-        callbacks: {}
-      },
-      pay2Win: {
-        callbacks: {}
-      }
-    }
-    if (this.#disappointedUsers.length > 0) {
-      this.#disappointedUsers.forEach((user) => {
-        const coordinatesLat = -50.607101021878165
-        const coordinatesLng = 165.97286224365234
-        if (user.username)
-          callbackFunctions.disappointed.callbacks[user['user-id']] = () => {
-            this.#game.handleUserGuess(user, { lat: coordinatesLat, lng: coordinatesLng }, false, true, 0, true)
-          }
-      })
-      this.#disappointedUsers = []
-    }
-
-    if (this.#pay2WinUsers.length > 0) {
-      this.#pay2WinUsers.forEach((user) => {
-        // get current round
-        let currentLocation = this.#game.getLocation()
-
-        const coordinatesLat = currentLocation.lat
-        const coordinatesLng = currentLocation.lng
-        if (user.username)
-          callbackFunctions.pay2Win.callbacks[user['user-id']] = () => {
-            this.#game.handleUserGuess(user, { lat: coordinatesLat, lng: coordinatesLng }, false, true, 0, true)
-          }
-      })
-      this.#pay2WinUsers = []
-    }
-
-    this.#game.refreshSeed(callbackFunctions, this.#battleRoyaleCounter).then((roundResults) => {
-      if (roundResults && roundResults.location) {
-        this.#showRoundResults(roundResults.location, roundResults.roundResults)
-      }
-    })
-    callbackFunctions = {
-      disappointed: {
-        callbacks: {}
-      },
-      pay2Win: {
-        callbacks: {}
-      }
-    }
-  }
-
   async #handleMessage(userstate: UserData, message: string) {
   /////// custom rewards
+
 
   if(userstate["custom-reward-id"]){
     const disappointmentIslandRewardId = 'fdb8170b-f862-4e80-8f4f-6355c8075578'

@@ -264,26 +264,6 @@ async function showRandomMultiMessageInScoreboard(){
 onMounted(async () => {
   settings.value = await chatguessrApi.getSettings()
   window.showClosestLocationModal = showLocationModal
-
-  const observer = new MutationObserver((mutationsList) => {
-    for (const mutation of mutationsList) {
-      if (mutation.type !== 'childList') continue
-
-      for (const node of mutation.addedNodes) {
-        // Check if the added node is the compass element itself or contains it
-        if (node instanceof HTMLElement) {
-          if (node.matches('[data-qa="compass"]') || node.querySelector('[data-qa="compass"]')) {
-            chatguessrApi.compassDetected()
-          }
-        }
-      }
-    }
-  })
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  })
 })
 
 onBeforeUnmount(
@@ -377,12 +357,20 @@ onBeforeUnmount(
   })
 )
 onBeforeUnmount(
-  chatguessrApi.onRefreshRound(async (location) => {
-    gameState.value = 'in-round'
+  chatguessrApi.onRefreshRound(async(location) => {
+
+    // this condition prevents gameState to switch to 'in-round' if 'onRefreshRound' is triggered (happens sometimes) on round results screen
+    // this is because of "did-frame-finish-load" based logic, ideally we would want something else
+    // Also block while game or round results are visible.
+    if (gameState.value !== 'round-results' && gameState.value !== 'game-results') {
+      gameState.value = 'in-round'
+    }
+    //console.log(settings, "settings")
     currentLocation.value = location
     if (satelliteMode.value.enabled) {
       rendererApi.showSatelliteMap(location)
     }
+
   })
 )
 declare global {
