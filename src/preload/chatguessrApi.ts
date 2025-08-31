@@ -22,6 +22,10 @@ export const chatguessrApi = {
     ipcRenderer.send('next-round-click')
   },
 
+  compassDetected() {
+    ipcRenderer.send('compass-detected')
+  },
+
   returnToMapPage() {
     ipcRenderer.send('return-to-map-page')
   },
