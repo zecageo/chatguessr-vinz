@@ -189,6 +189,10 @@ type GeoGuessrMap = {
   averageScore: number
   maxErrorDistance: number
   likes: number
+  mapSize: {
+    coordinateCount: number
+    label: string
+  }
 }
 
 type Distance = {
