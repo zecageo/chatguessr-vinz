@@ -252,26 +252,17 @@ const end_columns: Column[] = [
   { name: 'Distance', value: 'distance', width: '80px', sortable: true },
   { name: 'Score', value: 'score', width: '65px', sortable: true }
 ]
-// NOTE: Occasionally the gameState may briefly revert to 'in-round' while still displaying round results
-// (e.g. after interacting with guess markers). We use the title ref to disambiguate the true intent.
-// When the title is still showing a round results label we keep the results columns visible.
-const activeRoundCols = computed(() => {
-  const isTrueInRound = props.gameState === 'in-round' && title.value === 'GUESSES'
-  if (isTrueInRound) {
-    return (props.isMultiGuess && !props.isBRMode)
+const activeRoundCols = computed(() =>
+  props.gameState === 'in-round'
+    ? (props.isMultiGuess && !props.isBRMode)
       ? [round_columns[1]]
       : round_columns.filter(
-          (f) =>
-            f.value === 'index' ||
-            f.value === 'player' ||
-            (settings[f.value] === true && f.value !== 'totalScore')
+          (f) => f.value === 'index' || f.value === 'player' || ( settings[f.value] === true && f.value !== 'totalScore' )
         )
-  }
-  // Round results view (or protected state while transiently misreported as in-round)
-  return round_columns.filter(
-    (f) => f.value !== 'totalScore' || settings['totalScore'] === true
-  )
-})
+    : round_columns.filter(
+          (f) => f.value !== 'totalScore' || settings['totalScore'] === true
+        )
+)
 const activeEndCols = computed(() =>
   props.gameState === 'in-round'
     ? (props.isMultiGuess && !props.isBRMode)
