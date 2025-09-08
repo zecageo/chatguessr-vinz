@@ -76,29 +76,81 @@ watch(() => props.isVisible, async (isVisible) => {
     };
 
     const streetViewService = new google.maps.StreetViewService();
-    streetViewService.getPanorama({
-      location: props.location,
-      radius: props.panoramaRadius || 5000,
-      source: getPanoramaSource(props.panoramaSource),
-    }, (data, status) => {
-      if (status === 'OK' && data && data.location && data.location.pano && panorama.value) {
-        // create a fresh panorama instance bound to the current container
-        panoramaInstance.value = new google.maps.StreetViewPanorama(panorama.value, {
-          addressControl: false,
-          showRoadLabels: false,
-        });
-        panoramaInstance.value.setPano(data.location.pano);
-        panoramaInstance.value.setVisible(true);
-  // Hide guess markers once the panorama is successfully displayed
-  hideGuessMarkers.unload();
-      } else {
-        if (panorama.value) {
-          panorama.value.innerHTML = '<p>No Street View found for this location.</p>';
+
+    // Promisified helper for getPanorama so we can await it
+    function getPanoramaPromise(options: google.maps.StreetViewLocationRequest) {
+      return new Promise<{ data: any; status: string }>((resolve, reject) => {
+        try {
+          streetViewService.getPanorama(options, (data: any, status: string) => {
+            if (status === google.maps.StreetViewStatus.OK) {
+              resolve({ data, status })
+            } else {
+              // resolve with status so caller can decide to break or retry
+              resolve({ data: null, status })
+            }
+          })
+        } catch (e) {
+          reject(e)
         }
-  // If no panorama, ensure markers remain visible
-  hideGuessMarkers.unload();
+      })
+    }
+
+    // Helper to compute distance between two coords using Google geometry
+    function computeDistanceBetween(coords1: { lat: number; lng: number }, coords2: any) {
+      try {
+        const a = new google.maps.LatLng(coords1.lat, coords1.lng)
+        return google.maps.geometry.spherical.computeDistanceBetween(a, coords2)
+      } catch (e) {
+        // fallback: return large distance
+        return Number.MAX_SAFE_INTEGER
       }
-    });
+    }
+
+    // We'll attempt to converge to the nearest panorama similarly to onRetrieveMyLastLoc
+    const searchRadiusStart = props.panoramaRadius || 250000
+    let radius = searchRadiusStart
+    let oldRadius = searchRadiusStart
+    let foundPanoId: string | null = null
+
+    while (true) {
+      try {
+        const res = await getPanoramaPromise({
+          location: props.location!,
+          preference: google.maps.StreetViewPreference.NEAREST,
+          source: getPanoramaSource(props.panoramaSource),
+          radius: radius,
+        })
+        if (!res || !res.data || !res.data.location) break
+
+        const panoLatLng = res.data.location.latLng
+        radius = computeDistanceBetween({ lat: props.location!.lat, lng: props.location!.lng }, panoLatLng)
+        foundPanoId = res.data.location.pano
+
+        if (oldRadius && radius >= oldRadius) break
+        oldRadius = radius
+      } catch (e) {
+        console.error('ClosestLocation: error while searching for pano', e)
+        break
+      }
+    }
+
+    if (foundPanoId && panorama.value) {
+      // create a fresh panorama instance bound to the current container
+      panoramaInstance.value = new google.maps.StreetViewPanorama(panorama.value, {
+        addressControl: false,
+        showRoadLabels: false,
+      })
+      panoramaInstance.value.setPano(foundPanoId)
+      panoramaInstance.value.setVisible(true)
+      // Hide guess markers while modal panorama is visible
+      hideGuessMarkers.load()
+    } else {
+      if (panorama.value) {
+        panorama.value.innerHTML = '<p>No Street View found for this location.</p>'
+      }
+      // ensure markers remain visible if nothing found
+      hideGuessMarkers.unload()
+    }
   } else {
     // modal was closed or no location: cleanup
     cleanupPanorama();

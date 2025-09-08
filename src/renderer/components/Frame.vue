@@ -592,18 +592,7 @@ onBeforeUnmount(
       break;
     }
   }
-  chatguessrApi.returnMyLastLoc(pano.url, username, locationNumber)        
-
-
-
-
-
-
-
-
-
-
-
+  chatguessrApi.returnMyLastLoc(pano.url, username, locationNumber)
   })
 )
 
