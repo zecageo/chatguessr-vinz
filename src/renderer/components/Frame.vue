@@ -280,13 +280,9 @@ async function showRandomMultiMessageInScoreboard(){
 async function handleTryAgain() {
   const maxRetries = 3;
   for (let i = 0; i < maxRetries; i++) {
-    const buttons = document.querySelectorAll('button');
-    let tryAgainButton: HTMLButtonElement | null = null;
-    buttons.forEach(button => {
-      if (button.innerText.toLowerCase().includes('try again')) {
-        tryAgainButton = button;
-      }
-    });
+    const tryAgainButton = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.innerText.toLowerCase().includes('try again')
+    );
 
     if (tryAgainButton) {
       console.log('Found "Try again" button. Clicking it...');
@@ -294,18 +290,15 @@ async function handleTryAgain() {
       await new Promise(resolve => setTimeout(resolve, 5000));
     } else {
       // Button not found, so we can stop checking.
+      console.log('"Try again" button not found. Continuing...');
       return;
     }
   }
 
   // Final check after all retries
-  const buttons = document.querySelectorAll('button');
-  let finalCheckButton: HTMLButtonElement | null = null;
-  buttons.forEach(button => {
-    if (button.innerText.toLowerCase().includes('try again')) {
-      finalCheckButton = button;
-    }
-  });
+  const finalCheckButton = Array.from(document.querySelectorAll('button')).find(
+    (button) => button.innerText.toLowerCase().includes('try again')
+  );
 
   if (finalCheckButton) {
     console.error('"Try again" button is still visible after 3 retries.');
