@@ -277,10 +277,45 @@ async function showRandomMultiMessageInScoreboard(){
   })
 }
 
+async function handleTryAgain() {
+  const maxRetries = 3;
+  for (let i = 0; i < maxRetries; i++) {
+    const buttons = document.querySelectorAll('button');
+    let tryAgainButton: HTMLButtonElement | null = null;
+    buttons.forEach(button => {
+      if (button.innerText.toLowerCase().includes('try again')) {
+        tryAgainButton = button;
+      }
+    });
+
+    if (tryAgainButton) {
+      console.log('Found "Try again" button. Clicking it...');
+      tryAgainButton.click();
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } else {
+      // Button not found, so we can stop checking.
+      return;
+    }
+  }
+
+  // Final check after all retries
+  const buttons = document.querySelectorAll('button');
+  let finalCheckButton: HTMLButtonElement | null = null;
+  buttons.forEach(button => {
+    if (button.innerText.toLowerCase().includes('try again')) {
+      finalCheckButton = button;
+    }
+  });
+
+  if (finalCheckButton) {
+    console.error('"Try again" button is still visible after 3 retries.');
+  }
+}
+
 onBeforeUnmount(
   chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
     
-
+    await handleTryAgain()
     isMultiGuess.value = _isMultiGuess
     isBRMode.value = _isBRMode
     console.log("isBRMode", isBRMode.value)
@@ -355,6 +390,7 @@ async function rotationFunction(){
 
 onBeforeUnmount(
   chatguessrApi.onStartRound(async() => {
+    await handleTryAgain()
         // console.log all settings
     gameState.value = 'in-round'
     rendererApi.clearMarkers()
