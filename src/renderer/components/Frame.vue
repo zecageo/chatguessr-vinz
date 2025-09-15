@@ -682,11 +682,23 @@ onBeforeUnmount(
   })
 )
 
-onBeforeUnmount(
-  chatguessrApi.onPickNextMap((mapId) => {
+let pickNextMapUnsub: (() => void) | null = null;
+
+onMounted(() => {
+  const maybeUnsub = (chatguessrApi.onPickNextMap as any)((mapId: string) => {
     pickNextMap(mapId)
   })
-)
+  if (typeof maybeUnsub === 'function') {
+    pickNextMapUnsub = maybeUnsub
+  }
+})
+
+onBeforeUnmount(() => {
+  if (pickNextMapUnsub) {
+    pickNextMapUnsub()
+    pickNextMapUnsub = null
+  }
+})
 
 onBeforeUnmount(
   chatguessrApi.onReceiveGuess((guess) => {

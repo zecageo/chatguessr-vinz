@@ -54,6 +54,7 @@ export default class MapSelector {
         let totalWeight = 0;
         let mapWeights: number[] = [];
         let mapList = this.#mapList;
+        console.log("mapList", this.#mapList);
 
         // calculate the total weight
         for(let map of mapList){
@@ -99,6 +100,7 @@ export default class MapSelector {
             map.emote = emotes[emoteIndex];
             emotes.splice(emoteIndex, 1);
         }
+        console.log("mapSample", mapSample);
         return mapSample;
     }
 

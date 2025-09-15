@@ -58,7 +58,9 @@ export default class GameHandler {
 
   #lastRoundSeed: string | undefined
 
-  #mapVotation: { map: any; emote: string }[] = []
+  // mapVotation contains map entries returned by MapSelector.getMapSample
+  // each entry looks like: { name, URL, weight, creator, NMPZ, emote }
+  #mapVotation: Array<{ name: string; URL: string; weight?: number; creator?: string; NMPZ?: boolean; emote: string }> = []
 	#mapVotes: Map<string, string> = new Map()
   #votingTimeout: NodeJS.Timeout | null = null
   
@@ -142,9 +144,12 @@ export default class GameHandler {
 			`A vote for the next map has started! You have 2.5 minutes to vote for one of the following maps:`,
 			{ system: true }
 		)
-		for (const { map, emote } of this.#mapVotation) {
+		this.#mapVotation.forEach(async (map) => {
+      console.log("map", map)
+      const emote = map.emote
+      console.log(map, emote)
 			await this.#backend?.sendMessage(`${map.name} ${emote}`, { system: true })
-		}
+		})
 
 		this.#votingTimeout = setTimeout(() => {
 			this.finishMapVoting()
@@ -157,24 +162,27 @@ export default class GameHandler {
       this.#votingTimeout = null
     }
     const votes = new Map<string, number>()
-		for (const emote of this.#mapVotes.values()) {
-			votes.set(emote, (votes.get(emote) ?? 0) + 1)
-		}
+    for (const emote of this.#mapVotes.values()) {
+      votes.set(emote, (votes.get(emote) ?? 0) + 1)
+    }
 
-		let winningEmote: string
-		if (votes.size > 0) {
-			const sortedVotes = [...votes.entries()].sort((a, b) => b[1] - a[1])
-			const maxVotes = sortedVotes[0][1]
-			const winners = sortedVotes.filter(([, numVotes]) => numVotes === maxVotes)
-			winningEmote = winners[Math.floor(Math.random() * winners.length)][0]
-		} else {
-			winningEmote = this.#mapVotation[Math.floor(Math.random() * this.#mapVotation.length)].emote
-		}
+    let winningEmote: string
+    if (votes.size > 0) {
+      const sortedVotes = [...votes.entries()].sort((a, b) => b[1] - a[1])
+      const maxVotes = sortedVotes[0][1]
+      const winners = sortedVotes.filter(([, numVotes]) => numVotes === maxVotes)
+      winningEmote = winners[Math.floor(Math.random() * winners.length)][0]
+    } else {
+      // pick a random map entry's emote if nobody voted
+      const randomEntry = this.#mapVotation[Math.floor(Math.random() * this.#mapVotation.length)]
+      winningEmote = randomEntry?.emote
+    }
 
-		const winningMap = this.#mapVotation.find(({ emote }) => emote === winningEmote)?.map
-		if (winningMap) {
-			this.#win.webContents.send('pick-next-map', winningMap.URL)
-		}
+    // Find the winning map entry by emote and send its URL (if any)
+    const winningEntry = this.#mapVotation.find((entry) => entry.emote === winningEmote)
+    if (winningEntry && winningEntry.URL) {
+      this.#win.webContents.send('pick-next-map', winningEntry.URL)
+    }
   }
 
   returnToMapPage() {
