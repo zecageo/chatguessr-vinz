@@ -9,16 +9,14 @@ export default class MapSelector {
   constructor() {
     this.#defaultMapList = mapList;
     this.#onlineMapList = [];
+    this.#mapList = this.#defaultMapList;
     this.getOnlineMapList().then(mapList => {
         this.#onlineMapList = mapList;
         if(this.#onlineMapList.length > 0){
             this.#mapList = this.#onlineMapList;
         }
-        else{
-            this.#mapList = this.#defaultMapList;
-        }
     }).catch(() => {
-        this.#mapList = this.#defaultMapList;
+        // stick with default map list
     });
   }
 

@@ -60,6 +60,7 @@ export default class GameHandler {
 
   #mapVotation: { map: any; emote: string }[] = []
 	#mapVotes: Map<string, string> = new Map()
+  #votingTimeout: NodeJS.Timeout | null = null
   
   TMPZ: boolean
 
@@ -126,6 +127,10 @@ export default class GameHandler {
   }
 
   async startMapVoting() {
+    if (this.#votingTimeout) {
+      clearTimeout(this.#votingTimeout)
+      this.#votingTimeout = null
+    }
     this.#mapVotation = await this.#mapSelector.getMapSample(3)
 		this.#mapVotes.clear()
 
@@ -141,12 +146,16 @@ export default class GameHandler {
 			await this.#backend?.sendMessage(`${map.name} ${emote}`, { system: true })
 		}
 
-		const votingTimeout = setTimeout(() => {
+		this.#votingTimeout = setTimeout(() => {
 			this.finishMapVoting()
 		}, 2.5 * 60 * 1000)
   }
 
   finishMapVoting() {
+    if (this.#votingTimeout) {
+      clearTimeout(this.#votingTimeout)
+      this.#votingTimeout = null
+    }
     const votes = new Map<string, number>()
 		for (const emote of this.#mapVotes.values()) {
 			votes.set(emote, (votes.get(emote) ?? 0) + 1)
