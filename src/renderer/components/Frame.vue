@@ -307,8 +307,10 @@ async function handleTryAgain() {
 
 onBeforeUnmount(
   chatguessrApi.onGameStarted(async(_isMultiGuess, _isBRMode, _modeHelp, restoredGuesses, location) => {
-    
-    await handleTryAgain()
+    // call handleTryAgain but wait for 2 seconds before starting
+    setTimeout(async () => {
+      await handleTryAgain()
+    }, 2000);
     isMultiGuess.value = _isMultiGuess
     isBRMode.value = _isBRMode
     console.log("isBRMode", isBRMode.value)
