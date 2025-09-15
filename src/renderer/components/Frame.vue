@@ -240,11 +240,30 @@ watch(
 // Create an observer to watch for:
 // - URL starting with https://www.geoguessr.com/maps
 // - Button existing with className starting with button_button
-const newGameObserver = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
-    if(getLocalStorage('autoStartNextGame', false)) {
-      return
-    }
+
+
+const pickNextMap = (mapId: String = "62a44b22040f04bd36e8a914") => {
+  // get the mapId of the current site if it is a map
+  const currentMapId = window.location.pathname.split('/').pop();
+  if (currentMapId === mapId) {
+    console.log("Already on the desired map, not navigating.");
+    return;
+  }
+  window.location.href = `https://www.geoguessr.com/maps/${mapId}`;
+}
+
+/**
+ * The original mutation handling logic extracted to run after navigation/load completes.
+ */
+function runMutationHandler(mutations: MutationRecord[] | null) {
+  // If autoStartNextGame is enabled, skip
+  if (getLocalStorage('autoStartNextGame', false)) {
+    return
+  }
+
+  // Keep original behavior: look for PLAY buttons and click
+  if (!mutations) return
+  for (const mutation of mutations) {
     if (mutation.type === 'childList') {
       const buttons = document.querySelectorAll("[class^='button_button']");
       buttons.forEach((button) => {
@@ -256,7 +275,35 @@ const newGameObserver = new MutationObserver((mutations) => {
         }
       });
     }
-  });
+  }
+}
+
+const newGameObserver = new MutationObserver((mutations) => {
+  // When triggered, first navigate to the next map
+  pickNextMap()
+
+  // Wait for navigation/load to complete, then run the original logic.
+  // Use the 'load' event on window to detect when the new page is loaded. If already loaded,
+  // schedule the handler on next tick.
+  const runAfterLoad = () => {
+    try {
+      runMutationHandler(mutations as MutationRecord[])
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // If the document is already in 'complete' state, run immediately next tick
+  if (document.readyState === 'complete') {
+    // small timeout ensures any DOM changes settle after navigation
+    setTimeout(runAfterLoad, 1500)
+  } else {
+    const onLoad = () => {
+      window.removeEventListener('load', onLoad)
+      setTimeout(runAfterLoad, 1500)
+    }
+    window.addEventListener('load', onLoad)
+  }
 });
 
 // Start observing the document for changes
