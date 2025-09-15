@@ -683,6 +683,12 @@ onBeforeUnmount(
 )
 
 onBeforeUnmount(
+  chatguessrApi.onPickNextMap((mapId) => {
+    pickNextMap(mapId)
+  })
+)
+
+onBeforeUnmount(
   chatguessrApi.onReceiveGuess((guess) => {
     scoreboard.value!.renderGuess(guess)
   })

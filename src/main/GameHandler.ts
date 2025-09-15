@@ -22,6 +22,7 @@ import {
 import { getEmoji, randomCountryFlag, selectFlag } from './lib/flags/flags'
 import streakCodes from './lib/streakCodes.json'
 import streakCodeCountdown from './lib/streakCodeCountdown.json'
+import MapSelector from './utils/MapSelector'
 
 const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL ?? 'https://chatguessr-server.herokuapp.com'
@@ -39,6 +40,8 @@ export default class GameHandler {
 
   #game: Game
 
+  #mapSelector: MapSelector
+
   #streamerDidRandomPlonk: boolean
 
   #requestAuthentication: () => Promise<void>
@@ -54,6 +57,9 @@ export default class GameHandler {
   #moveCommandTimeKeeper: { [key: string]: number } = {}
 
   #lastRoundSeed: string | undefined
+
+  #mapVotation: { map: any; emote: string }[] = []
+	#mapVotes: Map<string, string> = new Map()
   
   TMPZ: boolean
 
@@ -68,6 +74,7 @@ export default class GameHandler {
     this.#socket = undefined
     this.#game = new Game(db, settings)
     this.#requestAuthentication = options.requestAuthentication
+    this.#mapSelector = new MapSelector()
     this.#battleRoyaleCounter = {}
     this.#streamerDidRandomPlonk = false
     this.#disappointedUsers = []
@@ -113,9 +120,52 @@ export default class GameHandler {
       this.openGuesses()
       if(this.#game.round === 3){
         // start map voting
-        
+        this.startMapVoting()
       }
     }
+  }
+
+  async startMapVoting() {
+    this.#mapVotation = await this.#mapSelector.getMapSample(3)
+		this.#mapVotes.clear()
+
+		if (this.#mapVotation.length < 1) {
+			return
+		}
+
+		await this.#backend?.sendMessage(
+			`A vote for the next map has started! You have 2.5 minutes to vote for one of the following maps:`,
+			{ system: true }
+		)
+		for (const { map, emote } of this.#mapVotation) {
+			await this.#backend?.sendMessage(`${map.name} ${emote}`, { system: true })
+		}
+
+		const votingTimeout = setTimeout(() => {
+			this.finishMapVoting()
+		}, 2.5 * 60 * 1000)
+  }
+
+  finishMapVoting() {
+    const votes = new Map<string, number>()
+		for (const emote of this.#mapVotes.values()) {
+			votes.set(emote, (votes.get(emote) ?? 0) + 1)
+		}
+
+		let winningEmote: string
+		if (votes.size > 0) {
+			const sortedVotes = [...votes.entries()].sort((a, b) => b[1] - a[1])
+			const maxVotes = sortedVotes[0][1]
+			const winners = sortedVotes.filter(([, numVotes]) => numVotes === maxVotes)
+			winningEmote = winners[Math.floor(Math.random() * winners.length)][0]
+		} else {
+			winningEmote = this.#mapVotation[Math.floor(Math.random() * this.#mapVotation.length)].emote
+		}
+
+		const winningMap = this.#mapVotation.find(({ emote }) => emote === winningEmote)?.map
+		if (winningMap) {
+			this.#win.webContents.send('pick-next-map', winningMap.URL)
+		}
   }
 
   returnToMapPage() {
@@ -1012,6 +1062,15 @@ export default class GameHandler {
   #cgCooldown: boolean = false
   #mapCooldown: boolean = false
   async #handleMessage(userstate: UserData, message: string) {
+    if (this.#mapVotation.length > 0) {
+			const emote = this.#mapVotation.find(({ emote }) => emote === message.trim())
+			if (emote) {
+				const userId = userstate['user-id']
+				if (userId && !this.#mapVotes.has(userId)) {
+					this.#mapVotes.set(userId, emote.emote)
+				}
+			}
+		}
   /////// custom rewards
   
 
