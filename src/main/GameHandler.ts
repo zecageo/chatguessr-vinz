@@ -156,7 +156,7 @@ export default class GameHandler {
 		}, 2.5 * 60 * 1000)
   }
 
-  finishMapVoting() {
+  async finishMapVoting() {
     if (this.#votingTimeout) {
       clearTimeout(this.#votingTimeout)
       this.#votingTimeout = null
@@ -180,8 +180,11 @@ export default class GameHandler {
 
     // Find the winning map entry by emote and send its URL (if any)
     const winningEntry = this.#mapVotation.find((entry) => entry.emote === winningEmote)
-    if (winningEntry && winningEntry.URL) {
-      this.#win.webContents.send('pick-next-map', winningEntry.URL)
+    if (winningEntry) {
+      await this.#backend?.sendMessage(`The winning map is ${winningEntry.name}!`, { system: true })
+      if (winningEntry.URL) {
+        this.#win.webContents.send('pick-next-map', winningEntry.URL)
+      }
     }
   }
 
@@ -601,6 +604,9 @@ export default class GameHandler {
             }
 
             this.openGuesses()
+            setTimeout(() => {
+              this.#backend?.sendMessage(`Use !map to get the map link`, { system: true })
+            }, 15 * 1000)
           })
           .catch((err) => {
             console.error(err)
