@@ -279,8 +279,7 @@ function runMutationHandler(mutations: MutationRecord[] | null) {
 }
 
 const newGameObserver = new MutationObserver((mutations) => {
-  // When triggered, first navigate to the next map
-  pickNextMap()
+
 
   // Wait for navigation/load to complete, then run the original logic.
   // Use the 'load' event on window to detect when the new page is loaded. If already loaded,

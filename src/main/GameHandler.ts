@@ -148,7 +148,7 @@ export default class GameHandler {
       console.log("map", map)
       const emote = map.emote
       console.log(map, emote)
-			await this.#backend?.sendMessage(`${map.name} ${emote}`, { system: true })
+			await this.#backend?.sendMessage(`${emote} ${map.name}`, { system: true })
 		})
 
 		this.#votingTimeout = setTimeout(() => {
